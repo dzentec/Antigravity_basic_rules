@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Request tracing & observability (`X-Request-ID`, structured logging, latency budgets).
   - OpenAPI 3.x schema-first generation from runtime DTO models.
   - Data access patterns & N+1 query prevention.
+- **Smart PreToolUse Router (`graph-router.sh` & `hooks.json`):**
+  - Fail-open safety trap with guaranteed `decision: allow` on script errors.
+  - Automatic session marker tracking (`/tmp/antigravity_graph_<conversationId>.marker`).
+  - Gated symbol-level lookups (`^[A-Za-z_][A-Za-z0-9_.]*$`) with explicit redirection to graph tools.
+  - Automatic unblocking of `grep_search` for text, logs, regexes, and post-graph secondary searches.
 
 ---
 

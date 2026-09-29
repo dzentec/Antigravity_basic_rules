@@ -2,7 +2,7 @@
   "graph-router": {
     "PreToolUse": [
       {
-        "matcher": "grep|glob",
+        "matcher": "grep_search|search_graph|trace_path|get_code_snippet|query_graph|get_architecture",
         "hooks": [
           {
             "type": "command",
