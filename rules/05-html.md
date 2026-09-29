@@ -1,57 +1,57 @@
 ---
 trigger: glob
 globs: "*.html"
-description: "Стандарты HTML5: семантическая разметка, доступность (a11y), шаблоны, разделение стилей и скриптов"
+description: "HTML5 standards: semantic markup, accessibility (a11y), clean separation of concerns, and template reuse"
 ---
 
-# 🌐 Стандарты HTML5 и разметки
-
----
-
-## 1. Семантика структуры
-
-- **Семантические теги:** Используйте `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
-- **Ограничение `<div>` и `<span>`:** Применяйте только как обёртки для стилизации или flex/grid контейнеров, когда нет подходящего семантического тега.
-- **Иерархия заголовков:** Ровно один `<h1>` на страницу. Заголовки `<h2>`–`<h6>` следуют строгой иерархии без пропуска уровней.
+# 🌐 HTML5 & Markup Standards
 
 ---
 
-## 2. Разделение ролей `id` и `class`
+## 1. Structural Semantics
 
-- **Атрибут `id`:** Предназначен исключительно для JavaScript-хуков, привязки лейблов форм (`for="input-id"`) и якорей навигации. Не используйте `id` для применения CSS-стилей.
-- **Атрибут `class`:** Предназначен для CSS-стилизации и визуальных модификаторов.
-- **Атрибуты `data-*`:** Для передачи параметров и состояния компонента в JS (например, `data-state="active"`, `data-user-id="123"`). Не кодируйте данные внутри имен классов.
-
----
-
-## 3. Запрет инлайн-кода
-
-- **Запрет инлайн-стилей:** Атрибут `style="..."` запрещен (исключение: динамические координаты или трансформации, вычисляемые в JS, например `element.style.transform = ...`).
-- **Запрет инлайн-скриптов:** Теги `<script>` без атрибута `src` и inline-обработчики (`onclick="..."`) запрещены. Используйте `<script type="module" src="...">`.
+- **Semantic Tags:** Use `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
+- **Restricted `<div>` and `<span>`:** Use only as CSS layout wrappers (flex/grid containers) when no semantic element applies.
+- **Heading Hierarchy:** Exactly one `<h1>` per page. Sub-headings `<h2>` through `<h6>` must follow a strict non-skipping hierarchy.
 
 ---
 
-## 4. Шаблонизация и повторы
+## 2. Separation of Concerns: `id`, `class`, `data-*`
 
-- **Тег `<template>`:** Повторяющиеся динамические фрагменты разметки (модальные окна, строки таблиц, карточки каталога) объявляются один раз внутри `<template id="...">` и клонируются через JS.
-
----
-
-## 5. Доступность (a11y)
-
-- **Кнопки без текста:** Кнопки с иконками обязаны иметь `aria-label="Описание действия"`.
-- **Изображения:** Обязательный атрибут `alt` (пустой `alt=""` только для чисто декоративных изображений).
-- **Формы:** Каждый элемент ввода обязан иметь связанный `<label>` или `aria-labelledby`.
-- **Интерактивные виджеты:** Кастомные элементы должны снабжаться атрибутами `role` и состояниями `aria-expanded`, `aria-hidden`, `aria-selected`.
+- **The `id` Attribute:** Reserved exclusively for JavaScript hooks, form label bindings (`for="input-id"`), and anchor targets. Never use `id` for CSS styling.
+- **The `class` Attribute:** Used exclusively for CSS styling and visual state modifiers.
+- **The `data-*` Attributes:** For passing state and parameters to JavaScript (`data-state="active"`, `data-user-id="123"`). Do not encode state in class names.
 
 ---
 
-## 6. Форматирование и структура
+## 3. No Inline Code
 
-- **Порядок атрибутов:** Рекомендуемый порядок: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
-- **Кавычки:** Всегда двойные кавычки для значений атрибутов.
-- **Отступы:** Запрещено использовать теги `<br>` для создания отступов и интервалов — только CSS (`margin`, `padding`, `gap`).
-- **Крупные секции:** Секции > 100 строк разделяются структурированными комментариями:
+- **No Inline Styles:** The `style="..."` attribute is forbidden (except for dynamic runtime transforms computed in JS, e.g., `element.style.transform = ...`).
+- **No Inline Scripts:** `<script>` tags without `src` and inline event handlers (`onclick="..."`) are forbidden. Use `<script type="module" src="...">`.
+
+---
+
+## 4. Templating & Component Reusability
+
+- **The `<template>` Element:** Reusable dynamic HTML snippets (modals, catalog cards, table rows) must be defined once inside `<template id="...">` and cloned via JS.
+
+---
+
+## 5. Accessibility (a11y)
+
+- **Icon-Only Buttons:** Buttons containing only icons must have an explicit `aria-label="Description of action"`.
+- **Images:** Mandatory `alt` attribute (empty `alt=""` only for purely decorative graphics).
+- **Forms:** Every form input must have an associated `<label>` or `aria-labelledby`.
+- **Custom Interactive Widgets:** Custom components must define appropriate `role` and state attributes (`aria-expanded`, `aria-hidden`, `aria-selected`).
+
+---
+
+## 6. Formatting & Cleanliness
+
+- **Attribute Order:** Standard order: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
+- **Quotes:** Double quotes for all attribute values.
+- **Spacing:** `<br>` tags are forbidden for vertical spacing. Use CSS margins/padding/gap.
+- **Large Sections:** Divide sections > 100 lines with structured comments:
   ```html
   <!-- ==================== SECTION: METRICS PANEL ==================== -->
   ```

@@ -22,326 +22,326 @@ index 0000000..a4e9964
 +}
 diff --git a/.agents/rules/00-research-protocol.md b/.agents/rules/00-research-protocol.md
 new file mode 100644
-index 0000000..074afbc
+index 0000000..3397c04
 --- /dev/null
 +++ b/.agents/rules/00-research-protocol.md
 @@ -0,0 +1,89 @@
 +---
 +trigger: always_on
-+description: "Протокол исследования кодовой базы перед изменениями: граф зависимостей, blast radius, fallback на grep"
++description: "Codebase research protocol before changes: dependency graph, blast radius estimation, grep fallback, and verification"
 +---
 +
-+# 🔍 Протокол исследования кодовой базы
++# 🔍 Codebase Research Protocol
 +
-+Перед ЛЮБЫМ изменением кода агент обязан построить карту зависимостей и оценить радиус поражения (blast radius).
-+
-+---
-+
-+## 1. Приоритет исследования
-+
-+При поиске и анализе зависимостей строго соблюдается порядок:
-+1. **MCP Граф знаний** (если зарегистрирован в среде — например, `codebase-memory-mcp` или аналогичный graph server) — приоритетный инструмент для анализа структуры кода и связей.
-+2. **Grep / Ripgrep** — режим деградации (degraded mode), если инструменты графа недоступны в текущем окружении, либо для поиска неструктурированных данных (строковые литералы, конфиги, переменные окружения).
-+3. **Прямое чтение файлов** — точечно, после локализации цели через граф или grep.
++Before making ANY code changes, the agent MUST map dependencies and assess the blast radius.
 +
 +---
 +
-+## 2. Работа через граф знаний (при наличии MCP-инструментов)
++## 1. Research Priority
 +
-+### 2.1. Проверка доступности инструментов графа
-+Перед началом исследования проверьте наличие и отклик инструментов графа:
-+- Если инструменты графа доступны (например, `search_graph`, `trace_path`, `query_graph`) — выполняем исследование через них.
-+- Если инструменты графа не зарегистрированы или возвращают ошибку доступности сервера — фиксируем **режим деградации (degraded mode)** и штатно переходим к поиску через grep/ripgrep.
-+
-+### 2.2. Порядок исследования символа / модуля
-+1. **Локализация:** Поиск определения сущности по имени или шаблону (например, `search_graph(name_pattern="<ИмяСимвола>")`).
-+2. **Входящие вызовы (кто зависит от нас):** Анализ входящих ссылок и потребителей (например, `trace_path(..., direction="inbound", depth=3)`).
-+3. **Исходящие вызовы (от кого зависим мы):** Анализ используемых зависимостей (например, `trace_path(..., direction="outbound", depth=3)`).
-+4. **Исходный код:** Чтение целевого фрагмента реализации (например, `get_code_snippet(...)`).
-+
-+### 2.3. Оценка Blast Radius (радиус поражения)
-+- **Inbound > 10:** Критический узел / публичный контракт. Любое изменение сигнатуры считается breaking change. Требуется явное планирование и одновременное обновление всех потребителей.
-+- **Outbound > 5:** Узел-концентратор (хаб). Рефакторинг и декомпозиция требуют предварительного плана.
-+- **Циклические зависимости:** При обнаружении фиксируются в отчёте. Исправление циклов выполняется отдельной задачей, а не «заодно».
++When locating and analyzing dependencies, follow this strict priority order:
++1. **MCP Knowledge Graph** (if available in the environment, e.g., `codebase-memory-mcp` or equivalent) — primary and preferred tool for structural discovery and relationship mapping.
++2. **Grep / Ripgrep** — degraded mode, used when knowledge graph tools are unavailable in the current environment, or for discovering unstructured data (string literals, configs, environment variables).
++3. **Direct File Inspection** — targeted reading, after localizing the target via graph or grep.
 +
 +---
 +
-+## 3. Режим деградации (Fallback на Grep)
++## 2. Working via Knowledge Graph (When MCP Tools are Present)
 +
-+Используется при отсутствии MCP-сервера графа либо для неструктурированных файлов:
-+- Поисковые запросы формулируются максимально узко и специфично (с указанием расширений файлов).
-+- Поиск по файлам > 400 строк выполняется с ограничением диапазона или построчным чтением.
-+- В итоговом отчёте указывается статус `Режим исследования: degraded mode (grep)`.
++### 2.1. Graph Tool Availability Check
++Before initiating research, check for graph tool responsiveness:
++- If graph tools are active (e.g., `search_graph`, `trace_path`, `query_graph`) — proceed in standard graph mode.
++- If graph tools are unregistered or return connection errors — record **degraded mode** and fall back seamlessly to grep/ripgrep.
++
++### 2.2. Symbol & Module Investigation Flow
++1. **Localization:** Find the definition by name or pattern (e.g., `search_graph(name_pattern="<SymbolName>")`).
++2. **Inbound Callers (who depends on this):** Trace incoming consumers (e.g., `trace_path(..., direction="inbound", depth=3)`).
++3. **Outbound Dependencies (what this depends on):** Trace outgoing calls (e.g., `trace_path(..., direction="outbound", depth=3)`).
++4. **Source Implementation:** Read targeted code slices (e.g., `get_code_snippet(...)`).
++
++### 2.3. Blast Radius Assessment
++- **Inbound > 10:** Critical node / public contract. Any signature modification is a breaking change requiring explicit planning and atomic updates across all consumers.
++- **Outbound > 5:** Hub node. Refactoring or decomposing requires a structured step-by-step plan.
++- **Circular Dependencies:** Record immediately if detected. Do NOT attempt to fix circular dependencies casually as part of an unrelated task.
 +
 +---
 +
-+## 4. Верификация после изменений
++## 3. Degraded Mode (Fallback to Grep)
 +
-+После внесения правок в код:
-+1. Повторно проверить входящие зависимости (через граф или поиск использований) для изменённых функций/классов.
-+2. Убедиться, что сигнатуры и типы данных всех вызывающих компонентов согласованы.
-+3. Запустить релевантные тесты затронутых модулей.
++Used when graph tools are unavailable or when inspecting non-code assets:
++- Craft narrow, highly specific search queries (filtering by file extensions).
++- For files exceeding 400 lines, use line-range queries or chunked reading.
++- Record `Research Mode: degraded mode (grep)` in the change report.
 +
 +---
 +
-+## 5. Формат отчёта после внесения изменений
++## 4. Post-Change Verification
 +
-+Каждое изменение кода сопровождается отчётом следующей структуры:
++After making changes to source code:
++1. Re-verify inbound callers (via graph or symbol references) for all modified functions and classes.
++2. Ensure signatures, return types, and schemas remain consistent across all consumers.
++3. Run relevant test suites covering all affected modules.
++
++---
++
++## 5. Post-Change Report Format
++
++Every code modification must conclude with a structured report:
 +
 +```markdown
-+### Что изменено
-+- Файл, диапазон строк, целевой символ/модуль
++### Changes Made
++- File, line range, target symbol/module
 +
-+### Режим исследования
-+- Граф доступен: да / нет (degraded mode)
++### Research Mode
++- Graph Available: yes / no (degraded mode)
 +
-+### Граф зависимостей
-+- Inbound: <список вызывающих / количество>
-+- Outbound: <список зависимостей>
-+- Циклические зависимости: обнаружены / не обнаружены
++### Dependency Analysis
++- Inbound: <list of callers / count>
++- Outbound: <list of dependencies>
++- Circular Dependencies: none / detected (<details>)
 +
 +### Blast Radius
-+- Затронуто модулей: <число>
-+- Breaking change: нет / да (обоснование)
++- Affected Modules Count: <number>
++- Breaking Change: no / yes (<rationale>)
 +
-+### Константы и Безопасность
-+- Константы вынесены в шапку / конфиг: да
-+- Секреты / хардкод учетных данных: отсутствуют
-+- Магические значения: отсутствуют
++### Constants & Security
++- Constants defined at module top / config: yes
++- Secrets / hardcoded credentials: none
++- Magic values: none
 +
-+### Тесты
-+- Запущено: <команда>, статус: pass / fail
++### Tests
++- Command: `<test command>`, Status: pass / fail
 +
-+### Контроль качества (No-Crutches)
-+- Нарушения правил и временные костыли: отсутствуют
++### Quality Control (No-Crutches)
++- Rule violations / temporary workarounds: none
 +```
 diff --git a/.agents/rules/01-architecture.md b/.agents/rules/01-architecture.md
 new file mode 100644
-index 0000000..aafcb00
+index 0000000..c385fa0
 --- /dev/null
 +++ b/.agents/rules/01-architecture.md
 @@ -0,0 +1,61 @@
 +---
 +trigger: always_on
-+description: "Общие архитектурные принципы: лимиты размеров, SRP, изоляция контрактов, константы, импорты"
++description: "Core architectural standards: file and function size limits, single responsibility, clean module boundaries, and constant management"
 +---
 +
-+# 🏗️ Архитектурные стандарты и декомпозиция
++# 🏗️ Architectural Standards & Decomposition
 +
-+Настоящие стандарты обязательны для любого типа проектов и языков программирования.
-+
-+---
-+
-+## 1. Лимиты размеров и модульность
-+
-+- **Файл > 400 строк** — критический порог и сигнал к декомпозиции на подмодули.
-+- **Функция > 50 строк** — подлежит разделению на вспомогательные чистые функции.
-+- **Метод класса > 80 строк** — подлежит рефакторингу и выносу логики.
-+- **Конструктор (`__init__` / `constructor`) > 30 строк** — обязательный переход на фабричные функции/методы или Builder.
-+- **Single Responsibility Principle (SRP):** Один модуль решает одну задачу. Если назначение модуля нельзя описать одним существительным без союза «и» / «and» — модуль требует разделения.
++These standards apply across all projects, frameworks, and programming languages.
 +
 +---
 +
-+## 2. Организация пакетов и импортов
++## 1. Size Thresholds & Modularity
 +
-+- **Точки входа пакетов (`__init__.py`, `index.js`):**
-+  - Предназначены исключительно для публичного реэкспорта (explicit exports).
-+  - Запрещено размещать бизнес-логику, тяжелые вычисления и побочные эффекты (side effects).
-+  - Запрещены жадные (eager) циклические импорты.
-+- **Изоляция общих контрактов:**
-+  - Базовые типы, интерфейсы, DTO и утилиты размещаются в выделенных слоях (`contracts/`, `shared/`, `types/`, `lib/`).
-+  - Листовые узлы графа зависимостей не должны импортировать вышележащие бизнес-сервисы.
-+- **Направление зависимостей:**
-+  - Импорты направлены строго сверху вниз по уровням абстракции.
-+  - Обратные зависимости запрещены.
-+  - Циклические зависимости считаются критической ошибкой проектирования.
-+- **Запрет групповых неявных импортов:**
-+  - Запрещены конструкции `from module import *` и `import * as X` без строгой необходимости. Все импорты должны быть явными.
++- **File > 400 lines** — Critical threshold requiring decomposition into submodules.
++- **Function > 50 lines** — Must be refactored into smaller, pure helper functions.
++- **Class Method > 80 lines** — Must be decomposed; delegate domain logic to separate services.
++- **Constructor (`__init__` / `constructor`) > 30 lines** — Transition to factory functions or the Builder pattern.
++- **Single Responsibility Principle (SRP):** Each module handles one distinct concern. If a module's purpose cannot be stated in a single noun without the conjunction "and", it must be split.
 +
 +---
 +
-+## 3. Разделение данных и логики
++## 2. Package Organization & Imports
 +
-+- **Данные отделены от исполняемого кода:**
-+  - Статические табличные данные, справочники и структуры конфигураций объемом > 50 строк выносятся в форматы данных (`JSON`, `YAML`, `TOML`, `CSV`).
-+  - Переменные окружения и runtime-настройки хранятся в файлах конфигурации, а не хардкодятся в исходном коде.
++- **Package Entry Points (`__init__.py`, `index.js`):**
++  - Reserved exclusively for explicit public re-exports.
++  - Business logic, heavy computations, and side effects are strictly forbidden.
++  - Eager circular imports are forbidden.
++- **Contract & Leaf Node Isolation:**
++  - Base types, schemas, DTOs, interfaces, and utilities reside in dedicated shared layers (`contracts/`, `shared/`, `types/`, `lib/`).
++  - Leaf nodes in the dependency graph must never import higher-level business services.
++- **Dependency Direction:**
++  - Imports must flow strictly downward across abstraction layers.
++  - Upward or reverse dependencies are prohibited.
++  - Circular dependencies are considered design bugs.
++- **No Wildcard Imports:**
++  - `from module import *` and `import * as X` are prohibited. All imports must be explicit.
 +
 +---
 +
-+## 4. Стабильность публичного API
++## 3. Separation of Data and Logic
 +
-+- Сигнатуры публичных функций, методов и эндпоинтов должны оставаться обратно совместимыми.
-+- При необходимости изменения публичного контракта:
-+  1. Найти всех потребителей через граф MCP / поиск.
-+  2. Разработать переходную сигнатуру (или deprecation layer) либо синхронно обновить всех потребителей в рамках одного атомарного изменения.
++- **Data is separated from executable code:**
++  - Static lookup tables, fixtures, and configs exceeding 50 lines must reside in structured data files (`JSON`, `YAML`, `TOML`, `CSV`).
++  - Runtime settings and environment configurations belong in config files/env vars, never hardcoded in logic modules.
 +
 +---
 +
-+## 5. Управление константами
++## 4. Public API Stability
 +
-+- Все настраиваемые и бизнес-параметры объявляются в верхней части модуля с поясняющими комментариями.
-+- **Запрет магических чисел:** Любые числовые и строковые литералы (кроме тривиальных `0`, `1`, `-1`, `2`, `100%`, `""`) должны быть вынесены в именованные константы.
-+- **Единицы измерения в именах:** Все физические, временные и количественные величины обязаны содержать единицу измерения в имени константы (`TIMEOUT_S`, `BUFFER_SIZE_KB`, `DELAY_MS`, `MAX_RETRIES_COUNT`).
++- Signatures of public functions, methods, and endpoints must maintain backward compatibility.
++- When public contracts must change:
++  1. Locate all consumers via graph or search tools.
++  2. Implement deprecation layers or update all callers atomically within a single change.
++
++---
++
++## 5. Constants Management
++
++- All configurable parameters must be declared at the top of the module with explanatory comments.
++- **No Magic Numbers:** Numeric or string literals in logic (except `0`, `1`, `-1`, `2`, `100%`, `""`) must be declared as named constants.
++- **Units in Constant Names:** Time, size, and rate constants must explicitly include units in their names (`TIMEOUT_S`, `BUFFER_SIZE_KB`, `DELAY_MS`, `MAX_RETRIES_COUNT`).
 diff --git a/.agents/rules/02-no-crutches.md b/.agents/rules/02-no-crutches.md
 new file mode 100644
-index 0000000..cb31913
+index 0000000..7f2aa09
 --- /dev/null
 +++ b/.agents/rules/02-no-crutches.md
 @@ -0,0 +1,90 @@
 +---
 +trigger: always_on
-+description: "Критические запреты и антипаттерны: запрет костылей, чистота кода, валидация через схемы, безопасность"
++description: "Prohibited anti-patterns and security invariants: strict code hygiene, schema validation, and vulnerability prevention"
 +---
 +
-+# 🚫 Каталог критических запретов (No Crutches & Security)
++# 🚫 Prohibitions & Security Invariants (No Crutches)
 +
-+Обнаружение или попытка внесения любого из перечисленных ниже паттернов является основанием для **немедленной остановки работы** и эскалации пользователю.
++Encountering or attempting to introduce any of the patterns listed below is grounds for **immediate generation stoppage** and escalation to the user.
 +
 +---
 +
-+## 1. Реестр архитектурных запретов
++## 1. Architectural Prohibitions
 +
-+1. **Глобальные переменные в JS:**
++1. **Global Variables in JS:**
 +   - ❌ `window.X = ...`, `global.X = ...`
-+   - ✅ Использование стандартных ES-модулей (`export` / `import`).
-+2. **Замалчивание исключений:**
++   - ✅ Standard ES Modules (`export` / `import`).
++2. **Silent Exception Swallowing:**
 +   - ❌ `try: ... except Exception: pass`, `catch (e) {}`
-+   - ✅ Перехват строго конкретных типов ошибок с логированием контекста и причины.
-+3. **Хардкод больших структур данных:**
-+   - ❌ Встраивание статических массивов/словарей > 20 строк внутрь исполняемых файлов.
-+   - ✅ Вынос во внешние файлы конфигураций (`JSON`, `YAML`, `TOML`).
-+4. **Ручная валидация типов:**
-+   - ❌ Множественные ручные проверки вида `if not isinstance(...)` или каскады `typeof`.
-+   - ✅ Декларативная валидация через схемы (Pydantic в Python, Zod / Yup / Joi в JS/TS).
-+5. **Дублирование логики:**
-+   - ❌ Копирование фрагментов кода > 5 строк между модулями или файлами.
-+   - ✅ Выделение в общие вспомогательные функции в слое `shared/` / `lib/`.
-+6. **Циклические и обратные импорты из пакетов:**
-+   - ❌ Импорт из собственного `__init__.py` или `index.js` внутри того же пакета.
-+   - ✅ Прямой импорт из конкретных дочерних модулей.
-+7. **Подавление проверок типов без обоснования:**
-+   - ❌ Безосновательные `# type: ignore`, `@ts-ignore`, `eslint-disable`.
-+   - ✅ Корректное описание типов либо комментарий с детальным объяснением причины и ссылки на issue.
-+8. **Анонимные и бессрочные TODO:**
-+   - ❌ Комментарии `// TODO: fix this`, `# TODO: refactor`.
-+   - ✅ TODO с указанием автора, даты и условия/задачи (`TODO(username, 2026-10-01): task-id`).
-+9. **Магические значения:**
-+   - ❌ Числа и строки в логических выражениях без именования.
-+   - ✅ Вынос в константы модуля.
-+10. **Константы без описания:**
-+    - ❌ Недокументированные константы с неочевидным смыслом.
-+    - ✅ JSDoc / TypeDoc / комментарий с указанием назначения и физического смысла.
-+11. **Мёртвый и закомментированный код:**
-+    - ❌ Оставление закомментированных блоков старого кода.
-+    - ✅ Полное удаление — история изменений надежно сохраняется в Git.
++   - ✅ Catch specific exception types, log context, and handle cleanly.
++3. **Hardcoded Data Blobs:**
++   - ❌ Embedding static dictionaries/arrays > 20 lines in source files.
++   - ✅ External configuration files (`JSON`, `YAML`, `TOML`).
++4. **Manual Type Checking:**
++   - ❌ Cascades of `if not isinstance(...)` or `typeof x === ...`.
++   - ✅ Declarative schema validation (Pydantic in Python, Zod / Yup in JS/TS).
++5. **Code Duplication:**
++   - ❌ Duplicating logic blocks > 5 lines across multiple files.
++   - ✅ Extracting to shared helper utilities in `shared/` or `lib/`.
++6. **Circular & Package Root Imports:**
++   - ❌ Importing from own `__init__.py` or `index.js` within the same package.
++   - ✅ Direct imports from explicit child modules.
++7. **Unjustified Type Ignore Directives:**
++   - ❌ Unexplained `# type: ignore`, `@ts-ignore`, `eslint-disable`.
++   - ✅ Proper type definitions or explicit comments documenting why the ignore is needed.
++8. **Anonymous / Undated TODOs:**
++   - ❌ Comments like `// TODO: fix this`, `# TODO: refactor`.
++   - ✅ Actionable TODOs with author, date, and task reference (`TODO(username, 2026-10-01): task-id`).
++9. **Magic Literals in Expressions:**
++   - ❌ Raw numbers and strings in conditional branches.
++   - ✅ Extracted module constants.
++10. **Undocumented Constants:**
++    - ❌ Ambiguous constant values without docstrings or comments.
++    - ✅ JSDoc / docstrings explaining meaning and units.
++11. **Dead / Commented-Out Code:**
++    - ❌ Leaving commented-out legacy code blocks.
++    - ✅ Complete deletion — Git tracks history.
 +
 +---
 +
-+## 2. Реестр правил безопасности (Security Invariants)
++## 2. Security Invariants
 +
-+12. **Секреты и учетные данные в коде:**
-+    - ❌ Хардкод API-ключей, токенов, паролей, секретов (`API_KEY = "sk-..."`, `SECRET = "..."`).
-+    - ✅ Чтение исключительно через переменные окружения (`os.environ`, `process.env`), защищённые `.env`-файлы (добавленные в `.gitignore`) или Secret Manager / Vault.
-+13. **Инъекции в запросах и командах (SQL / Command Injection):**
-+    - ❌ Формирование SQL-запросов или системных вызовов через f-строки и конкатенацию (`f"SELECT * FROM users WHERE id = '{user_id}'"`).
-+    - ✅ Только параметризованные запросы (prepared statements) или ORM / Query Builder.
-+14. **Динамическое исполнение кода (Code Injection):**
-+    - ❌ Вызовы `eval()`, `exec()` в Python, `eval()`, `new Function(...)` в JS.
-+    - ✅ Использование безопасных десериализаторов (`json.loads`, `ast.literal_eval`, `JSON.parse`).
-+15. **Небезопасный рендеринг HTML (XSS):**
-+    - ❌ Прямая вставка несанитизированного пользовательского ввода через `dangerouslySetInnerHTML`, `innerHTML = untrusted_str`.
-+    - ✅ Использование `textContent`, безопасных шаблонизаторов или санитизация через библиотеки (DOMPurify).
-+16. **Небезопасное выполнение системных процессов:**
-+    - ❌ Вызовы вида `subprocess.run(f"cmd {user_input}", shell=True)` или `child_process.exec(...)`.
-+    - ✅ Передача аргументов строго списком с отключенным shell: `subprocess.run(["cmd", arg1, arg2], shell=False)`, `child_process.execFile(...)`.
-+17. **Небезопасная десериализация недоверенных данных (RCE):**
-+    - ❌ `pickle.loads()` / `pickle.load()`, `_pickle`, `shelve` на данных от пользователя / сети.
-+    - ❌ `yaml.load()` без безопасного лоадера (`yaml.load(data, Loader=yaml.Loader)`).
-+    - ✅ `json.loads()` / `json.load()` для JSON.
-+    - ✅ `yaml.safe_load()` для YAML.
-+    - ✅ `pydantic` / `msgspec` для валидированных структурированных DTO.
-+18. **Выход за пределы директории (Path Traversal):**
-+    - ❌ `os.path.join(base_dir, user_filename)` или `Path(base_dir) / user_input` без проверки выхода.
-+    - ✅ `Path.resolve()` с обязательной проверкой нахождения внутри базового каталога:
++12. **Secrets and Credentials in Code:**
++    - ❌ Hardcoded API keys, tokens, passwords (`API_KEY = "sk-..."`, `SECRET = "..."`).
++    - ✅ Read strictly from environment variables (`os.environ`, `process.env`), `.env` files (in `.gitignore`), or Secret Vaults.
++13. **Query & Command Injections (SQL / Command Injection):**
++    - ❌ Raw string formatting for queries or shell commands (`f"SELECT * FROM users WHERE id = '{user_id}'"`).
++    - ✅ Parameterized queries (prepared statements) or ORM query builders.
++14. **Dynamic Code Execution (Code Injection):**
++    - ❌ `eval()`, `exec()` in Python, `eval()`, `new Function(...)` in JS.
++    - ✅ Safe deserializers (`json.loads`, `ast.literal_eval`, `JSON.parse`).
++15. **Unsafe HTML Rendering (XSS):**
++    - ❌ Raw user input in `dangerouslySetInnerHTML` or `innerHTML = untrusted_str`.
++    - ✅ Safe DOM methods (`textContent`), template sanitization, or DOMPurify.
++16. **Unsafe Process Spawning:**
++    - ❌ `subprocess.run(f"cmd {user_input}", shell=True)` or `child_process.exec(...)`.
++    - ✅ Arguments passed strictly as a list with shell disabled: `subprocess.run(["cmd", arg1, arg2], shell=False)`, `child_process.execFile(...)`.
++17. **Unsafe Deserialization (RCE):**
++    - ❌ `pickle.loads()` / `pickle.load()`, `_pickle`, `shelve` on untrusted user or network input.
++    - ❌ `yaml.load()` without safe loader (`yaml.load(data, Loader=yaml.Loader)`).
++    - ✅ `json.loads()` for JSON.
++    - ✅ `yaml.safe_load()` for YAML.
++    - ✅ `pydantic` / `msgspec` for validated structured schemas.
++18. **Directory Escape (Path Traversal):**
++    - ❌ `os.path.join(base_dir, user_filename)` or `Path(base_dir) / user_input` without containment validation.
++    - ✅ `Path.resolve()` with mandatory containment checks:
 +      ```python
 +      target = (base_dir / user_input).resolve()
 +      if not target.is_relative_to(base_dir.resolve()):
 +          raise PermissionError("Path traversal detected")
 +      ```
-+    - ✅ `Path(user_input).name` для надежного извлечения только имени файла.
++    - ✅ `Path(user_input).name` to safely extract only the filename.
 +
 +---
 +
-+## 3. Протокол эскалации при невозможности прямого решения
++## 3. Escalation Protocol
 +
-+Если поставленная задача технически не может быть решена без применения костыля или компромисса безопасности, агент **обязан остановить генерацию** и уведомить пользователя по шаблону:
++If a task cannot be achieved without violating an architectural rule or security invariant, the agent **MUST halt generation** and notify the user:
 +
-+> ⚠️ **Предупреждение архитектурного контроля:**
-+> «Решение задачи требует структурного изменения в модуле `<имя_модуля>`. Применение временного решения нарушит правило `<номер_правила>`. Рекомендуется предварительно провести рефакторинг `<описание_рефакторинга>` перед реализацией фичи.»
++> ⚠️ **Architectural Control Alert:**
++> "Resolving this task cleanly requires structural changes in module `<module_name>`. Applying a quick workaround would violate rule `<rule_number>`. Recommend performing refactoring `<refactoring_details>` before implementing this feature."
 diff --git a/.agents/rules/03-python.md b/.agents/rules/03-python.md
 new file mode 100644
-index 0000000..fb3d546
+index 0000000..01e47a0
 --- /dev/null
 +++ b/.agents/rules/03-python.md
 @@ -0,0 +1,77 @@
 +---
 +trigger: glob
 +globs: "*.py, *.pyi"
-+description: "Стандарты разработки на Python 3.11+: строгая типизация, Pydantic, логирование, исключения, константы"
++description: "Python 3.11+ development standards: strict type annotations, Pydantic, structured logging, safe exceptions, and constant immutability"
 +---
 +
-+# 🐍 Стандарты разработки на Python (3.11+)
++# 🐍 Python Standards (3.11+)
 +
 +---
 +
-+## 1. Типизация и сигнатуры
++## 1. Typing & Signatures
 +
-+- **Обязательная типизация:** Все аргументы функций, методов и возвращаемые значения должны иметь строгие аннотации типов.
-+- **Отложенная оценка аннотаций:** Всегда включайте в начало каждого файла:
++- **Mandatory Typing:** All function/method arguments and return values must be explicitly type-annotated.
++- **Postponed Evaluation:** Always place at the very top of each file:
 +  ```python
 +  from __future__ import annotations
 +  ```
-+- **Современный синтаксис:** Используйте встроенные дженерики (`list[str]`, `dict[str, int]`, `tuple[int, ...]`) и оператор объединения типов `X | Y` вместо `Optional[X]` и `Union[X, Y]`.
-+- **Протоколы и контракты:** Для duck-typing и описания интерфейсов используйте `typing.Protocol` вместо наследования от тяжелых базовых классов.
++- **Modern Syntax:** Use built-in generics (`list[str]`, `dict[str, int]`, `tuple[int, ...]`) and union operators `X | Y` instead of `Optional[X]` and `Union[X, Y]`.
++- **Protocols & Interfaces:** For structural subtyping (duck-typing), use `typing.Protocol` instead of inheritance from heavy abstract base classes.
 +
 +---
 +
-+## 2. Валидация данных и границы системы
++## 2. Data Validation & System Boundaries
 +
-+- **Декларативные схемы:** На границах ввода-вывода (API, CLI-аргументы, чтение конфигураций, парсинг файлов) используйте Pydantic модели (`BaseModel`, `Field`) или `msgspec`.
-+- **Запрет ручной валидации:** Избегайте каскадных конструкций `if not isinstance(val, int): raise ValueError()`. Валидация и приведение типов должны выполняться парсером схемы.
-+- **Безопасная десериализация:** Для конфигов и данных используйте `yaml.safe_load()` или `json.loads()`. Запрещено использование `pickle` на данных из внешних источников.
++- **Declarative Schemas:** At I/O boundaries (APIs, CLI arguments, config parsing, file reading), validate payloads using Pydantic models (`BaseModel`, `Field`) or `msgspec`.
++- **No Manual Type Checks:** Avoid cascading `if not isinstance(val, int): raise ValueError()`. Parsing and conversion should be handled declaratively.
++- **Safe Deserialization:** Use `yaml.safe_load()` or `json.loads()`. Never use `pickle` on untrusted input.
 +
 +---
 +
-+## 3. Логирование и диагностика
++## 3. Logging & Diagnostics
 +
-+- **Модульные логгеры:**
++- **Module-Level Loggers:**
 +  ```python
 +  import logging
 +  logger = logging.getLogger(__name__)
 +  ```
-+- **Запрет `print()`:** Функция `print()` запрещена в продакшен-коде (допустима только в одноразовых scratch-скриптах и CLI-утилитах вывода для пользователя).
-+- **Контекст логирования:** Логируйте структурированные сообщения и передавайте контекст через `extra` или параметры форматирования:
++- **No `print()` Calls:** `print()` is forbidden in production code (allowed only in transient scratch scripts and CLI output formatters).
++- **Structured Context:** Pass structured parameters via `extra` or logging formatters:
 +  ```python
-+  logger.info("Обработка запроса начата", extra={"request_id": req_id})
++  logger.info("Processing request started", extra={"request_id": req_id})
 +  ```
 +
 +---
 +
-+## 4. Обработка исключений
++## 4. Exception Handling
 +
-+- **Специфичные исключения:** Перехватывайте только ожидаемые типы исключений (`KeyError`, `ValueError`, `FileNotFoundError`).
-+- **Запрет глушения:** Конструкция `except Exception: pass` категорически запрещена.
-+- **Сохранение контекста:** При повторном выбросе используйте цепочки исключений: `raise CustomDomainError("детали") from err`.
-+- **Логирование трейсбека:** При перехвате непредвиденных ошибок обязательно используйте `logger.exception("Непредвиденная ошибка при обработке: %s", err)`.
++- **Specific Exceptions:** Catch only expected exception types (`KeyError`, `ValueError`, `FileNotFoundError`).
++- **No Swallowing:** `except Exception: pass` is strictly prohibited.
++- **Exception Chaining:** When re-raising or wrapping, preserve causality: `raise CustomDomainError("details") from err`.
++- **Traceback Logging:** For unexpected errors, always use `logger.exception("Unexpected error occurred: %s", err)`.
 +
 +---
 +
-+## 5. Аргументы по умолчанию и мутабельность
++## 5. Default Arguments & Mutability
 +
-+- **Запрет мутабельных дефолтов:** Конструкции вида `def process(items: list = [])` запрещены.
-+- **Идиома `None`:**
++- **No Mutable Defaults:** `def process(items: list = [])` is strictly forbidden.
++- **Idiomatic `None` Initialization:**
 +  ```python
 +  def process(items: list[str] | None = None) -> None:
 +      target_items = items if items is not None else []
@@ -349,175 +349,175 @@ index 0000000..fb3d546
 +
 +---
 +
-+## 6. Константы и форматирование
++## 6. Constants & Formatting
 +
-+- **Неизменяемые константы:**
++- **Immutable Constants:**
 +  ```python
 +  from typing import Final
 +
 +  DEFAULT_TIMEOUT_S: Final[float] = 30.0
 +  MAX_RETRY_ATTEMPTS: Final[int] = 3
 +  ```
-+- **Строки:** Используйте f-строки (`f"Result: {value}"`). Форматирование через `%` и `.format()` запрещено.
-+- **Импорты:** Используйте абсолютные импорты (`from app.services import core`) вместо глубоких относительных путей (`from ...services import core`).
-+- **Стиль:** Соответствие правилам `ruff` / `black` / `isort`.
++- **F-Strings:** Use f-strings (`f"Result: {value}"`). `%` and `.format()` formatting are forbidden.
++- **Absolute Imports:** Use absolute package imports (`from app.services import core`) rather than deep relative imports (`from ...services import core`).
++- **Code Style:** Comply with `ruff` / `black` / `isort` configurations.
 diff --git a/.agents/rules/04-javascript.md b/.agents/rules/04-javascript.md
 new file mode 100644
-index 0000000..145e171
+index 0000000..522f546
 --- /dev/null
 +++ b/.agents/rules/04-javascript.md
 @@ -0,0 +1,69 @@
 +---
 +trigger: glob
 +globs: "*.js, *.mjs"
-+description: "Стандарты JavaScript (ES6+): ES-модули, immutability, async/await, работа с DOM, безопасность"
++description: "Modern JavaScript (ES6+) standards: ES modules, immutability, async/await, DOM safety, and constant freezing"
 +---
 +
-+# 🟨 Стандарты разработки на JavaScript (ES6+)
-+
-+---
-+
-+## 1. Модульная система и область видимости
-+
-+- **Только ES-модули:** Используйте стандартные `import` и `export`.
-+- **Запрет глобального скоупа:** Запрещено привязывать свойства и функции к `window.*` или `globalThis.*`.
-+- **Переменные:**
-+  - `const` — по умолчанию для всех объявлений.
-+  - `let` — исключительно тогда, когда значение переменной действительно переназначается.
-+  - `var` — категорически запрещён.
++# 🟨 JavaScript Standards (ES6+)
 +
 +---
 +
-+## 2. Операции сравнения и типы
++## 1. Module System & Scope
 +
-+- **Строгое равенство:** Всегда используйте `===` и `!==`.
-+- **Запрет нестрогого сравнения:** Операторы `==` и `!=` запрещены во избежание неявного приведения типов.
-+- **Опциональная цепочка и nullish coalescing:** Активно используйте `obj?.prop` и `val ?? defaultValue`.
-+
-+---
-+
-+## 3. Асинхронность и обработка ошибок
-+
-+- **Async / Await:** Предпочитайте синтаксис `async/await` цепочкам `.then()`.
-+- **Неотловленные промисы:** Вызовы без `await` допускаются только для фоновых задач при обязательном наличии `.catch(err => logger.error(err))`.
-+- **Изоляция сбоев:** Асинхронные обработчики событий DOM должны оборачиваться в `try / catch`.
++- **Strictly ES Modules:** Use standard `import` and `export` statements.
++- **No Global Scope Pollution:** Never attach properties to `window.*` or `globalThis.*`.
++- **Variables:**
++  - `const` — Default for all variable declarations.
++  - `let` — Only when the value is explicitly reassigned.
++  - `var` — Strictly forbidden.
 +
 +---
 +
-+## 4. Ограничения размеров и сложность
++## 2. Comparisons & Type Safety
 +
-+- **Функция > 40 строк** — сигнал к декомпозиции.
-+- **Обработчики событий (`handle*`) > 80 строк** — запрещены. Обработчик должен лишь извлекать параметры из события и делегировать выполнение сервисному слою.
-+
-+---
-+
-+## 5. Работа с DOM и шаблонизация
-+
-+- **Запрет небезопасного HTML:**
-+  - Запрещена генерация больших фрагментов разметки через `element.innerHTML = '<div>...</div>'`.
-+  - Для динамических элементов используйте HTML `<template>` теги либо `document.createElement()`.
-+  - Допустима интерполяция в `innerHTML` только для простых скалярных значений после санитизации.
-+- **Кэширование DOM-запросов:**
-+  - Запрещены повторяющиеся вызовы `document.getElementById` или `document.querySelector` внутри циклов и в колбэках `requestAnimationFrame`.
-+  - Кэшируйте ссылки на DOM-элементы при инициализации модуля/компонента.
++- **Strict Equality:** Always use `===` and `!==`.
++- **No Loose Comparisons:** `==` and `!=` are forbidden to prevent unexpected type coercion.
++- **Optional Chaining & Nullish Coalescing:** Utilize `obj?.prop` and `val ?? defaultValue`.
 +
 +---
 +
-+## 6. Константы и конфигурации
++## 3. Asynchrony & Error Handling
 +
-+- **Именование:** `SCREAMING_SNAKE_CASE` для констант модуля.
-+- **Защита от мутаций:** Используйте `Object.freeze()` для экспортируемых объектов конфигураций и словарей перечислений.
-+- **Документирование:** Сопровождайте функции JSDoc-комментариями с описанием параметров и возвращаемых типов:
++- **Async / Await:** Prefer `async/await` syntax over complex `.then()` chains.
++- **Unhandled Promises:** Floating promises must be handled with `.catch(err => logger.error(err))`.
++- **DOM Event Isolation:** Asynchronous event callbacks should be wrapped in `try / catch` blocks.
++
++---
++
++## 4. Function Complexity & Handler Limits
++
++- **Function > 40 lines** — Signal for decomposition.
++- **Event Handlers (`handle*`) > 80 lines** — Forbidden. Handlers should only extract parameters and delegate execution to domain services.
++
++---
++
++## 5. DOM Manipulation & Templating
++
++- **Safe HTML Practices:**
++  - Setting raw HTML blobs via `innerHTML = '<div>...</div>'` is forbidden.
++  - Use HTML `<template>` elements or `document.createElement()`.
++  - Simple scalar values in `innerHTML` must be properly sanitized.
++- **DOM Query Caching:**
++  - Repeated calls to `document.getElementById` or `document.querySelector` inside loops or `requestAnimationFrame` callbacks are prohibited.
++  - Cache DOM references during module/component initialization.
++
++---
++
++## 6. Constants & Configurations
++
++- **Naming:** `SCREAMING_SNAKE_CASE` for module-level constants.
++- **Mutation Protection:** Use `Object.freeze()` for configuration dictionaries and enum objects.
++- **JSDoc:** Annotate public functions with parameter types and descriptions:
 +  ```javascript
 +  /**
-+   * Вычисляет итоговый размер буфера.
-+   * @param {number} baseSizeMb - Базовый размер в МБ.
-+   * @param {number} multiplier - Коэффициент масштабирования.
-+   * @returns {number} Размер в байтах.
++   * Computes the target buffer size.
++   * @param {number} baseSizeMb - Base buffer size in MB.
++   * @param {number} multiplier - Scaling multiplier.
++   * @returns {number} Buffer size in bytes.
 +   */
 +  ```
 diff --git a/.agents/rules/05-html.md b/.agents/rules/05-html.md
 new file mode 100644
-index 0000000..04b408b
+index 0000000..6f99211
 --- /dev/null
 +++ b/.agents/rules/05-html.md
 @@ -0,0 +1,57 @@
 +---
 +trigger: glob
 +globs: "*.html"
-+description: "Стандарты HTML5: семантическая разметка, доступность (a11y), шаблоны, разделение стилей и скриптов"
++description: "HTML5 standards: semantic markup, accessibility (a11y), clean separation of concerns, and template reuse"
 +---
 +
-+# 🌐 Стандарты HTML5 и разметки
-+
-+---
-+
-+## 1. Семантика структуры
-+
-+- **Семантические теги:** Используйте `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
-+- **Ограничение `<div>` и `<span>`:** Применяйте только как обёртки для стилизации или flex/grid контейнеров, когда нет подходящего семантического тега.
-+- **Иерархия заголовков:** Ровно один `<h1>` на страницу. Заголовки `<h2>`–`<h6>` следуют строгой иерархии без пропуска уровней.
++# 🌐 HTML5 & Markup Standards
 +
 +---
 +
-+## 2. Разделение ролей `id` и `class`
++## 1. Structural Semantics
 +
-+- **Атрибут `id`:** Предназначен исключительно для JavaScript-хуков, привязки лейблов форм (`for="input-id"`) и якорей навигации. Не используйте `id` для применения CSS-стилей.
-+- **Атрибут `class`:** Предназначен для CSS-стилизации и визуальных модификаторов.
-+- **Атрибуты `data-*`:** Для передачи параметров и состояния компонента в JS (например, `data-state="active"`, `data-user-id="123"`). Не кодируйте данные внутри имен классов.
-+
-+---
-+
-+## 3. Запрет инлайн-кода
-+
-+- **Запрет инлайн-стилей:** Атрибут `style="..."` запрещен (исключение: динамические координаты или трансформации, вычисляемые в JS, например `element.style.transform = ...`).
-+- **Запрет инлайн-скриптов:** Теги `<script>` без атрибута `src` и inline-обработчики (`onclick="..."`) запрещены. Используйте `<script type="module" src="...">`.
++- **Semantic Tags:** Use `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
++- **Restricted `<div>` and `<span>`:** Use only as CSS layout wrappers (flex/grid containers) when no semantic element applies.
++- **Heading Hierarchy:** Exactly one `<h1>` per page. Sub-headings `<h2>` through `<h6>` must follow a strict non-skipping hierarchy.
 +
 +---
 +
-+## 4. Шаблонизация и повторы
++## 2. Separation of Concerns: `id`, `class`, `data-*`
 +
-+- **Тег `<template>`:** Повторяющиеся динамические фрагменты разметки (модальные окна, строки таблиц, карточки каталога) объявляются один раз внутри `<template id="...">` и клонируются через JS.
-+
-+---
-+
-+## 5. Доступность (a11y)
-+
-+- **Кнопки без текста:** Кнопки с иконками обязаны иметь `aria-label="Описание действия"`.
-+- **Изображения:** Обязательный атрибут `alt` (пустой `alt=""` только для чисто декоративных изображений).
-+- **Формы:** Каждый элемент ввода обязан иметь связанный `<label>` или `aria-labelledby`.
-+- **Интерактивные виджеты:** Кастомные элементы должны снабжаться атрибутами `role` и состояниями `aria-expanded`, `aria-hidden`, `aria-selected`.
++- **The `id` Attribute:** Reserved exclusively for JavaScript hooks, form label bindings (`for="input-id"`), and anchor targets. Never use `id` for CSS styling.
++- **The `class` Attribute:** Used exclusively for CSS styling and visual state modifiers.
++- **The `data-*` Attributes:** For passing state and parameters to JavaScript (`data-state="active"`, `data-user-id="123"`). Do not encode state in class names.
 +
 +---
 +
-+## 6. Форматирование и структура
++## 3. No Inline Code
 +
-+- **Порядок атрибутов:** Рекомендуемый порядок: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
-+- **Кавычки:** Всегда двойные кавычки для значений атрибутов.
-+- **Отступы:** Запрещено использовать теги `<br>` для создания отступов и интервалов — только CSS (`margin`, `padding`, `gap`).
-+- **Крупные секции:** Секции > 100 строк разделяются структурированными комментариями:
++- **No Inline Styles:** The `style="..."` attribute is forbidden (except for dynamic runtime transforms computed in JS, e.g., `element.style.transform = ...`).
++- **No Inline Scripts:** `<script>` tags without `src` and inline event handlers (`onclick="..."`) are forbidden. Use `<script type="module" src="...">`.
++
++---
++
++## 4. Templating & Component Reusability
++
++- **The `<template>` Element:** Reusable dynamic HTML snippets (modals, catalog cards, table rows) must be defined once inside `<template id="...">` and cloned via JS.
++
++---
++
++## 5. Accessibility (a11y)
++
++- **Icon-Only Buttons:** Buttons containing only icons must have an explicit `aria-label="Description of action"`.
++- **Images:** Mandatory `alt` attribute (empty `alt=""` only for purely decorative graphics).
++- **Forms:** Every form input must have an associated `<label>` or `aria-labelledby`.
++- **Custom Interactive Widgets:** Custom components must define appropriate `role` and state attributes (`aria-expanded`, `aria-hidden`, `aria-selected`).
++
++---
++
++## 6. Formatting & Cleanliness
++
++- **Attribute Order:** Standard order: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
++- **Quotes:** Double quotes for all attribute values.
++- **Spacing:** `<br>` tags are forbidden for vertical spacing. Use CSS margins/padding/gap.
++- **Large Sections:** Divide sections > 100 lines with structured comments:
 +  ```html
 +  <!-- ==================== SECTION: METRICS PANEL ==================== -->
 +  ```
 diff --git a/.agents/rules/06-css.md b/.agents/rules/06-css.md
 new file mode 100644
-index 0000000..4600463
+index 0000000..06066db
 --- /dev/null
 +++ b/.agents/rules/06-css.md
 @@ -0,0 +1,67 @@
 +---
 +trigger: glob
 +globs: "*.css"
-+description: "Стандарты CSS3: дизайн-токены в :root, лимит вложенности селекторов, БЭМ/утилиты, @layer"
++description: "CSS3 & styling standards: design tokens in :root, selector nesting limits, utility classes, and @layer cascading"
 +---
 +
-+# 🎨 Стандарты CSS3 и стилизации
++# 🎨 CSS3 & Styling Standards
 +
 +---
 +
-+## 1. Дизайн-токены и переменные
++## 1. Design Tokens & Variables
 +
-+- **Централизация в `:root`:** Цветовая палитра, шкала отступов, радиусы скруглений, типографика и тени объявляются исключительно через CSS-переменные:
++- **Centralized in `:root`:** Palette colors, spacing scales, border radii, typography tokens, and shadows must be defined exclusively via CSS custom properties:
 +  ```css
 +  :root {
 +    --color-bg-primary: #0d1117;
@@ -530,43 +530,43 @@ index 0000000..4600463
 +    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.12);
 +  }
 +  ```
-+- **Запрет магических значений:** Прямое использование сырых HEX/RGB-кодов и произвольных размеров в телах правил запрещено.
++- **No Raw Magic Values:** Direct use of arbitrary HEX/RGB codes and unscaled dimensions in rule bodies is forbidden.
 +
 +---
 +
-+## 2. Единицы измерения
++## 2. Measurement Units
 +
-+- **Шрифты и отступы:** Используйте `rem` для масштабируемости интерфейса.
-+- **Тонкие границы:** Используйте `px` для `border: 1px solid ...` и разделительных линий.
-+- **Единица `em`:** Избегайте использования `em` за исключением компонентов с контекстным масштабированием (например, размеры иконок относительно размера текста кнопки).
-+
-+---
-+
-+## 3. Селекторы и специфичность
-+
-+- **Лимит вложенности:** Максимум 3 уровня селекторов (например, `.card .header .title`). Селекторы вида `.a .b .c .d .e` запрещены.
-+- **Запрет `!important`:** Модификатор `!important` запрещён (допустим исключительно для принудительного переопределения недоступных стилей внешних сторонних библиотек с обязательным поясняющим комментарием).
-+- **Именование:** Используйте плоские BEM-подобные классы (`.btn`, `.btn--primary`, `.card__header`) или утилитарные классы.
++- **Typography & Spacing:** Use `rem` for responsive and scalable UI elements.
++- **Borders & Thin Lines:** Use `px` for `border: 1px solid ...` and hairline dividers.
++- **The `em` Unit:** Avoid `em` except for context-scaling icons relative to parent text sizes.
 +
 +---
 +
-+## 4. Повторное использование и компоненты
++## 3. Selectors & Specificity
 +
-+- **Базовые классы + модификаторы:** Создавайте общие классы для повторяющихся элементов (`.card`, `.btn`, `.panel`, `.badge`). Запрещено дублировать набор `background + border + border-radius + padding` по десяткам несвязанных селекторов.
-+- **Утилиты эффектов:** Выносите типовые эффекты (свечения, размытия, скроллбары) в отдельные классы (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
-+- **Скроллбары:** Определяйте стили скроллбара один раз через централизованные селекторы или класс, избегая размножения копий.
++- **Nesting Limit:** Maximum 3 levels of nesting (e.g., `.card .header .title`). Long chains like `.a .b .c .d .e` are forbidden.
++- **No `!important`:** `!important` is forbidden (allowed only to override unmodifiable third-party CSS libraries, with an explanatory comment).
++- **Naming Conventions:** Use flat BEM-like classes (`.btn`, `.btn--primary`, `.card__header`) or reusable utility classes.
 +
 +---
 +
-+## 5. Организация и модульность
++## 4. Reusability & Component Patterns
 +
-+- **Медиа-запросы:** Группируйте адаптивные правила в конце файла либо выносите в выделенный `responsive.css`. Избегайте рассеивания мелких `@media` блоков по всему файлу.
-+- **Лимит размера файла:** При достижении файлом > 1000 строк разделите его на логические модули:
-+  - `tokens.css` (переменные и тема)
-+  - `layout.css` (сетка, контейнеры, шапка, подвал)
-+  - `components.css` (кнопки, формы, карточки, модалки)
-+- **Каскадные слои (`@layer`):** Если поддерживается проектом, используйте `@layer base, layout, components, utilities;` для строгого контроля специфичности.
-+- **Разделители секций:**
++- **Base Classes + Modifiers:** Establish common base styles (`.card`, `.btn`, `.panel`, `.badge`). Never duplicate `background + border + border-radius + padding` across disconnected selectors.
++- **Visual Utilities:** Extract shared effects (glows, glassmorphism, scrollbars) into utility classes (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
++- **Scrollbars:** Define custom scrollbar styling once globally or via a utility class.
++
++---
++
++## 5. Organization & Modularity
++
++- **Media Queries:** Group responsive rules at the end of the file or extract to `responsive.css`. Do not scatter isolated `@media` blocks arbitrarily.
++- **File Decomposition (> 1000 lines):** Split large stylesheets into focused modules:
++  - `tokens.css` (variables and theme tokens)
++  - `layout.css` (grid, flex containers, header, footer)
++  - `components.css` (buttons, forms, cards, modals)
++- **Cascade Layers (`@layer`):** When supported, use `@layer base, layout, components, utilities;` for predictable specificity.
++- **Section Dividers:**
 +  ```css
 +  /* ==========================================================================
 +     CARD COMPONENT
@@ -574,124 +574,123 @@ index 0000000..4600463
 +  ```
 diff --git a/.agents/rules/07-tests.md b/.agents/rules/07-tests.md
 new file mode 100644
-index 0000000..c26b207
+index 0000000..e0b4be7
 --- /dev/null
 +++ b/.agents/rules/07-tests.md
 @@ -0,0 +1,53 @@
 +---
 +trigger: glob
 +globs: "test_*.py, *_test.py, conftest.py, *.test.js, *.spec.js"
-+description: "Стандарты модульного и интеграционного тестирования: AAA, изоляция, параметризация, граничные условия"
++description: "Unit and integration testing standards: AAA structure, hermetic isolation, parameterization, and 5-point boundary coverage"
 +---
 +
-+# 🧪 Стандарты тестирования и обеспечения качества
-+
-+---
-+
-+## 1. Структура и соглашения об именовании
-+
-+- **Принцип атомарности:** Один тестовый сценарий проверяет ровно одно утверждение или поведение.
-+- **Именование:** Имя теста должно точно отражать контекст: `test_<что_тестируем>_<при_каких_условиях>_<ожидаемый_результат>` (например, `test_parse_config_when_file_missing_raises_not_found`).
-+- **Паттерн AAA (Arrange-Act-Assert):**
-+  - Каждый тест чётко разделяется на три блока: подготовка данных (Arrange), выполнение действия (Act), проверка результата (Assert).
-+  - Блоки разделяются одной пустой строкой.
++# 🧪 Testing & Quality Assurance Standards
 +
 +---
 +
-+## 2. Изоляция и внешние зависимости
++## 1. Structure & Naming Conventions
 +
-+- **Герметичность тестов:** Модульные тесты не должны зависеть от сетевых подключений, внешней файловой системы (кроме временных каталогов `tmp_path`) или глобального состояния.
-+- **Мокирование на границах:** Моки применяются исключительно на внешних границах системы (сетевые запросы, таймеры, системное время, генераторы случайных чисел). Мокирование внутренних вспомогательных методов запрещено.
-+- **Время и асинхронность:** Запрещены задержки `time.sleep()` и `setTimeout` в тестах. Используйте `freezegun` / `freeze_time` или мокирование системных часов.
-+- **Порядок выполнения:** Тесты не должны зависеть от порядка их запуска и должны быть идемпотентными.
-+
-+---
-+
-+## 3. Матрица граничных условий (Edge Cases)
-+
-+При разработке тестов для функций бизнес-логики и валидаторов обязательно покрываются:
-+1. **Валидный типовой сценарий (Happy Path)**
-+2. **Минимальное граничное значение (Min / 0 / пустая строка / пустой массив)**
-+3. **Максимальное граничное значение (Max / верхний лимит)**
-+4. **Невалидные типы / некорректный формат (Invalid format)**
-+5. **Значения отсутствия данных (`None`, `null`, `undefined`)**
++- **Single Assertion Focus:** Each test case verifies exactly one distinct behavior or expectation.
++- **Naming Pattern:** Clearly state what is being tested: `test_<target>_<condition>_<expected_result>` (e.g., `test_parse_config_when_file_missing_raises_not_found`).
++- **AAA Pattern (Arrange-Act-Assert):**
++  - Explicitly partition tests into three sections: setup (Arrange), execution (Act), verification (Assert).
++  - Separate blocks with single blank lines.
 +
 +---
 +
-+## 4. Параметризация и фикстуры
++## 2. Test Hermeticity & Isolation
 +
-+- **Параметризация:** Для тестирования набора однотипных входных и выходных данных используйте `@pytest.mark.parametrize` (в Python) или `test.each` (в JS/TS) вместо дублирования тел тестов.
-+- **Общие фикстуры:** Объекты подготовки данных выносите в `conftest.py` или тестовые хелперы.
++- **Hermetic Tests:** Unit tests must not depend on network calls, global system state, or external disk paths (use `tmp_path` fixtures).
++- **Mocks on Boundaries Only:** Mock only external I/O boundaries (HTTP, DB connections, system clocks, random generators). Never mock internal private methods.
++- **No Sleep Calls:** `time.sleep()` and `setTimeout` are forbidden in tests. Use `freezegun` / `freeze_time` or mock clock timers.
++- **Execution Independence:** Tests must be idempotent and pass in any execution order.
 +
 +---
 +
-+## 5. Протокол исправления дефектов (Bugfix First)
++## 3. 5-Point Boundary Matrix (Edge Cases)
 +
-+При обнаружении бага:
-+1. Сначала пишется падающий тест, воспроизводящий дефект.
-+2. Вносится минимальное исправление в продакшен-код.
-+3. Проверяется, что ранее созданный тест стал зелёным, а остальные тесты не сломаны.
++When testing domain logic, parsers, and validators, always cover:
++1. **Happy Path:** Standard valid input scenario.
++2. **Minimum Boundary:** Zero, empty string `""`, empty list `[]`, lower limit.
++3. **Maximum Boundary:** Upper limit, large buffer, max capacity.
++4. **Invalid Types / Formats:** Malformed syntax, unexpected types.
++5. **Null / None Scenarios:** Missing values (`None`, `null`, `undefined`).
++
++---
++
++## 4. Parameterization & Fixtures
++
++- **Data-Driven Tests:** For testing multiple inputs/outputs against the same logic, use `@pytest.mark.parametrize` (Python) or `test.each` (JS) instead of copying test bodies.
++- **Shared Fixtures:** Place reusable fixture factories in `conftest.py` or test helper modules.
++
++---
++
++## 5. Bugfix-First Protocol
++
++When fixing defects:
++1. Write a failing test reproducing the reported bug.
++2. Apply the minimal code fix.
++3. Verify that the new test passes and no regression was introduced.
 diff --git a/.agents/rules/08-commits.md b/.agents/rules/08-commits.md
 new file mode 100644
-index 0000000..6f74cf4
+index 0000000..7ee7949
 --- /dev/null
 +++ b/.agents/rules/08-commits.md
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,54 @@
 +---
 +trigger: model_decision
-+description: "Стандарты коммитов (Conventional Commits): атомарность, формат заголовка и тела, запрет мусорных файлов"
++description: "Git commit standards: Conventional Commits, atomicity, focus on the rationale (WHY), and git repository hygiene"
 +---
 +
-+# 📦 Стандарты оформления коммитов и управления Git
-+
-+---
-+
-+## 1. Принципы атомарности и частоты
-+
-+- **Один коммит = одно логическое изменение:** Запрещено объединять в один коммит реализацию новой фичи и попутный рефакторинг других модулей.
-+- **Зелёный статус:** Каждый коммит должен оставлять кодовую базу в компилируемом и проходящем тесты состоянии.
-+- **Разделение рефакторинга:** Структурные изменения и переименования выполняются в отдельных коммитах от бизнес-логики.
-+- **Предварительный просмотр:** Перед фиксацией всегда проверяйте подготовленные изменения через `git diff --staged`.
++# 📦 Git Commit Standards & Repository Hygiene
 +
 +---
 +
-+## 2. Формат сообщения коммита
++## 1. Atomicity & Frequency
 +
-+Сообщения формируются по спецификации Conventional Commits:
++- **One Commit = One Logical Change:** Never mix new feature logic with unrelated refactoring or cleanup.
++- **Green Builds:** Every commit must leave the repository in a compiling, passing test state.
++- **Separate Refactoring:** Structural changes and renames must be committed separately from functional feature changes.
++- **Pre-Commit Review:** Always inspect staged changes via `git diff --staged` before committing.
++
++---
++
++## 2. Commit Message Structure
++
++Follow the Conventional Commits specification:
 +
 +```text
-+<тип>(<область_видимости>): <краткое описание в повелительном наклонении>
++<type>(<scope>): <concise description in imperative mood>
 +
-+<детальное описание причины (ПОЧЕМУ было сделано изменение)>
++<detailed explanation of WHY the change was made>
 +
-+[Ссылки на задачи: Closes #123]
++[References: Closes #123]
 +```
 +
-+### Типы изменений:
-+- `feat` — добавление новой функциональности для пользователя
-+- `fix` — исправление ошибки в существующей логике
-+- `refactor` — изменение внутренней структуры кода без изменения внешнего поведения
-+- `test` — добавление или корректировка тестов
-+- `perf` — оптимизация производительности
-+- `docs` — изменения исключительно в документации
-+- `chore` — обновление зависимостей, сборки, конфигурации линтеров
++### Commit Types:
++- `feat` — New feature or capability for the user
++- `fix` — Bugfix in existing functionality
++- `refactor` — Code restructuring with no behavior change
++- `test` — Adding or updating test suites
++- `perf` — Performance optimization
++- `docs` — Documentation changes only
++- `chore` — Dependency updates, build configs, linters
 +
-+### Правила оформления:
-+1. **Первая строка (Title):** Не более 72 символов, в повелительном наклонении, строчными буквами, без точки в конце.
-+2. **Тело сообщения (Body):** Фокусируется на вопросе **«Зачем / Почему»**, а не «Что» (что именно изменено видно в diff).
-+3. **Несовместимые изменения (Breaking Changes):** Обозначаются восклицательным знаком после типа (например, `feat(api)!: изменить структуру ответа`) и секцией `BREAKING CHANGE:` в теле.
-+4. **Языковое единообразие:** Если в репозитории принят русский язык для коммитов — используйте русский. Если английский — английский.
-+5. **Запрещённые формулировки:** Запрещены бессодержательные заголовки: `fix`, `minor changes`, `wip`, `update`, `исправил ошибки`.
++### Formatting Rules:
++1. **Title Line:** Maximum 72 characters, lowercase, imperative mood ("add", not "added" or "adds"), no trailing period.
++2. **Message Body:** Focus on **WHY** the change was made (the diff shows "what").
++3. **Breaking Changes:** Indicated by an exclamation mark after the type (`feat(api)!: change response envelope`) and a `BREAKING CHANGE:` section in the body.
++4. **No Vague Messages:** Messages like `fix`, `wip`, `minor updates`, `cleanup` are strictly forbidden.
 +
 +---
 +
-+## 3. Запрет коммита временных и служебных файлов
++## 3. Repository Hygiene: Prohibited Junk Files
 +
-+Строго запрещено добавлять в индекс и коммитить:
-+- Переменные окружения и секреты (`.env`, `.env.local`, `*.pem`, `credentials.json`)
-+- Артефакты сборки и кэши (`__pycache__/`, `.pytest_cache/`, `dist/`, `build/`, `node_modules/`, `*.pyc`)
-+- Временные директории и логи (`scratch/`, `*.log`, `.tmp/`)
-+- Локальные настройки сред разработки (`.idea/`, `.vscode/settings.json`)
++Strictly forbidden from staging or committing:
++- Environment variables and secrets (`.env`, `.env.local`, `*.pem`, `credentials.json`)
++- Build artifacts and caches (`__pycache__/`, `.pytest_cache/`, `dist/`, `build/`, `node_modules/`, `*.pyc`)
++- Transient logs and scratch directories (`scratch/`, `*.log`, `.tmp/`)
++- Local IDE configurations (`.idea/`, `.vscode/settings.json`)
 diff --git a/scripts/graph-router.sh b/scripts/graph-router.sh
 new file mode 100644
 index 0000000..8b99bcd

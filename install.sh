@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# install.sh — Универсальный скрипт установки пакета правил в целевой проект
+# install.sh — Universal installation script for the rules package
 #
-# Использование:
-#   ./install.sh /path/to/project          — применить install.patch (по умолчанию)
-#   ./install.sh /path/to/project --dry    — проверить применимость без изменений
-#   ./install.sh /path/to/project --copy   — прямое копирование файлов
-#   ./install.sh /path/to/project --revert — откатить изменения (uninstall)
+# Usage:
+#   ./install.sh /path/to/project          — apply install.patch (default)
+#   ./install.sh /path/to/project --dry    — check applicability without applying
+#   ./install.sh /path/to/project --copy   — direct file copy mode
+#   ./install.sh /path/to/project --revert — rollback changes (uninstall)
 # ==============================================================================
 
 set -euo pipefail
@@ -16,46 +16,46 @@ MODE="${2:-patch}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ ! -d "$TARGET" ]; then
-  echo "❌ Ошибка: Целевой каталог '$TARGET' не существует."
+  echo "❌ Error: Target directory '$TARGET' does not exist."
   exit 1
 fi
 
 case "$MODE" in
   --dry)
-    echo "=== ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР (DIFF) ==="
+    echo "=== PREVIEW (DIFF) ==="
     cat "$SCRIPT_DIR/diff/install.patch"
     echo
-    echo "=== ПРОВЕРКА ПРИМЕНИМОСТИ ==="
+    echo "=== APPLICABILITY CHECK ==="
     cd "$TARGET"
     git apply --check "$SCRIPT_DIR/diff/install.patch"
-    echo "✅ install.patch успешно применим к проекту."
+    echo "✅ install.patch is cleanly applicable to target project."
     ;;
 
   --revert)
-    echo "=== ОТКАТ ПРАВИЛ ==="
+    echo "=== ROLLBACK RULES ==="
     cd "$TARGET"
     if [ -f "$SCRIPT_DIR/diff/uninstall.patch" ]; then
       git apply "$SCRIPT_DIR/diff/uninstall.patch"
     else
       git apply -R "$SCRIPT_DIR/diff/install.patch"
     fi
-    echo "✅ Пакет правил успешно удалён из $TARGET"
+    echo "✅ Rules package successfully removed from $TARGET"
     ;;
 
   --copy)
-    echo "=== ПРЯМОЕ КОПИРОВАНИЕ ==="
+    echo "=== DIRECT FILE COPY ==="
     mkdir -p "$TARGET/.agents/rules" "$TARGET/scripts"
     cp "$SCRIPT_DIR/rules/"*.md "$TARGET/.agents/rules/"
     cp "$SCRIPT_DIR/hooks/hooks.json" "$TARGET/.agents/hooks.json" 2>/dev/null || true
     cp "$SCRIPT_DIR/hooks/graph-router.sh" "$TARGET/scripts/" 2>/dev/null || true
     chmod +x "$TARGET/scripts/graph-router.sh" 2>/dev/null || true
-    echo "✅ Файлы правил успешно скопированы в $TARGET"
+    echo "✅ Rules files successfully copied to $TARGET"
     ;;
 
   *)
-    echo "=== ПРИМЕНЕНИЕ PATCH ==="
+    echo "=== APPLYING PATCH ==="
     cd "$TARGET"
     git apply "$SCRIPT_DIR/diff/install.patch"
-    echo "✅ install.patch успешно применён в $TARGET"
+    echo "✅ install.patch successfully applied to $TARGET"
     ;;
 esac

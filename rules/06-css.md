@@ -1,16 +1,16 @@
 ---
 trigger: glob
 globs: "*.css"
-description: "Стандарты CSS3: дизайн-токены в :root, лимит вложенности селекторов, БЭМ/утилиты, @layer"
+description: "CSS3 & styling standards: design tokens in :root, selector nesting limits, utility classes, and @layer cascading"
 ---
 
-# 🎨 Стандарты CSS3 и стилизации
+# 🎨 CSS3 & Styling Standards
 
 ---
 
-## 1. Дизайн-токены и переменные
+## 1. Design Tokens & Variables
 
-- **Централизация в `:root`:** Цветовая палитра, шкала отступов, радиусы скруглений, типографика и тени объявляются исключительно через CSS-переменные:
+- **Centralized in `:root`:** Palette colors, spacing scales, border radii, typography tokens, and shadows must be defined exclusively via CSS custom properties:
   ```css
   :root {
     --color-bg-primary: #0d1117;
@@ -23,43 +23,43 @@ description: "Стандарты CSS3: дизайн-токены в :root, ли�
     --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.12);
   }
   ```
-- **Запрет магических значений:** Прямое использование сырых HEX/RGB-кодов и произвольных размеров в телах правил запрещено.
+- **No Raw Magic Values:** Direct use of arbitrary HEX/RGB codes and unscaled dimensions in rule bodies is forbidden.
 
 ---
 
-## 2. Единицы измерения
+## 2. Measurement Units
 
-- **Шрифты и отступы:** Используйте `rem` для масштабируемости интерфейса.
-- **Тонкие границы:** Используйте `px` для `border: 1px solid ...` и разделительных линий.
-- **Единица `em`:** Избегайте использования `em` за исключением компонентов с контекстным масштабированием (например, размеры иконок относительно размера текста кнопки).
-
----
-
-## 3. Селекторы и специфичность
-
-- **Лимит вложенности:** Максимум 3 уровня селекторов (например, `.card .header .title`). Селекторы вида `.a .b .c .d .e` запрещены.
-- **Запрет `!important`:** Модификатор `!important` запрещён (допустим исключительно для принудительного переопределения недоступных стилей внешних сторонних библиотек с обязательным поясняющим комментарием).
-- **Именование:** Используйте плоские BEM-подобные классы (`.btn`, `.btn--primary`, `.card__header`) или утилитарные классы.
+- **Typography & Spacing:** Use `rem` for responsive and scalable UI elements.
+- **Borders & Thin Lines:** Use `px` for `border: 1px solid ...` and hairline dividers.
+- **The `em` Unit:** Avoid `em` except for context-scaling icons relative to parent text sizes.
 
 ---
 
-## 4. Повторное использование и компоненты
+## 3. Selectors & Specificity
 
-- **Базовые классы + модификаторы:** Создавайте общие классы для повторяющихся элементов (`.card`, `.btn`, `.panel`, `.badge`). Запрещено дублировать набор `background + border + border-radius + padding` по десяткам несвязанных селекторов.
-- **Утилиты эффектов:** Выносите типовые эффекты (свечения, размытия, скроллбары) в отдельные классы (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
-- **Скроллбары:** Определяйте стили скроллбара один раз через централизованные селекторы или класс, избегая размножения копий.
+- **Nesting Limit:** Maximum 3 levels of nesting (e.g., `.card .header .title`). Long chains like `.a .b .c .d .e` are forbidden.
+- **No `!important`:** `!important` is forbidden (allowed only to override unmodifiable third-party CSS libraries, with an explanatory comment).
+- **Naming Conventions:** Use flat BEM-like classes (`.btn`, `.btn--primary`, `.card__header`) or reusable utility classes.
 
 ---
 
-## 5. Организация и модульность
+## 4. Reusability & Component Patterns
 
-- **Медиа-запросы:** Группируйте адаптивные правила в конце файла либо выносите в выделенный `responsive.css`. Избегайте рассеивания мелких `@media` блоков по всему файлу.
-- **Лимит размера файла:** При достижении файлом > 1000 строк разделите его на логические модули:
-  - `tokens.css` (переменные и тема)
-  - `layout.css` (сетка, контейнеры, шапка, подвал)
-  - `components.css` (кнопки, формы, карточки, модалки)
-- **Каскадные слои (`@layer`):** Если поддерживается проектом, используйте `@layer base, layout, components, utilities;` для строгого контроля специфичности.
-- **Разделители секций:**
+- **Base Classes + Modifiers:** Establish common base styles (`.card`, `.btn`, `.panel`, `.badge`). Never duplicate `background + border + border-radius + padding` across disconnected selectors.
+- **Visual Utilities:** Extract shared effects (glows, glassmorphism, scrollbars) into utility classes (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
+- **Scrollbars:** Define custom scrollbar styling once globally or via a utility class.
+
+---
+
+## 5. Organization & Modularity
+
+- **Media Queries:** Group responsive rules at the end of the file or extract to `responsive.css`. Do not scatter isolated `@media` blocks arbitrarily.
+- **File Decomposition (> 1000 lines):** Split large stylesheets into focused modules:
+  - `tokens.css` (variables and theme tokens)
+  - `layout.css` (grid, flex containers, header, footer)
+  - `components.css` (buttons, forms, cards, modals)
+- **Cascade Layers (`@layer`):** When supported, use `@layer base, layout, components, utilities;` for predictable specificity.
+- **Section Dividers:**
   ```css
   /* ==========================================================================
      CARD COMPONENT

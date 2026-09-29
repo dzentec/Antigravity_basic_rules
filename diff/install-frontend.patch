@@ -1,160 +1,160 @@
 diff --git a/.agents/rules/04-javascript.md b/.agents/rules/04-javascript.md
 new file mode 100644
-index 0000000..145e171
+index 0000000..522f546
 --- /dev/null
 +++ b/.agents/rules/04-javascript.md
 @@ -0,0 +1,69 @@
 +---
 +trigger: glob
 +globs: "*.js, *.mjs"
-+description: "Стандарты JavaScript (ES6+): ES-модули, immutability, async/await, работа с DOM, безопасность"
++description: "Modern JavaScript (ES6+) standards: ES modules, immutability, async/await, DOM safety, and constant freezing"
 +---
 +
-+# 🟨 Стандарты разработки на JavaScript (ES6+)
-+
-+---
-+
-+## 1. Модульная система и область видимости
-+
-+- **Только ES-модули:** Используйте стандартные `import` и `export`.
-+- **Запрет глобального скоупа:** Запрещено привязывать свойства и функции к `window.*` или `globalThis.*`.
-+- **Переменные:**
-+  - `const` — по умолчанию для всех объявлений.
-+  - `let` — исключительно тогда, когда значение переменной действительно переназначается.
-+  - `var` — категорически запрещён.
++# 🟨 JavaScript Standards (ES6+)
 +
 +---
 +
-+## 2. Операции сравнения и типы
++## 1. Module System & Scope
 +
-+- **Строгое равенство:** Всегда используйте `===` и `!==`.
-+- **Запрет нестрогого сравнения:** Операторы `==` и `!=` запрещены во избежание неявного приведения типов.
-+- **Опциональная цепочка и nullish coalescing:** Активно используйте `obj?.prop` и `val ?? defaultValue`.
-+
-+---
-+
-+## 3. Асинхронность и обработка ошибок
-+
-+- **Async / Await:** Предпочитайте синтаксис `async/await` цепочкам `.then()`.
-+- **Неотловленные промисы:** Вызовы без `await` допускаются только для фоновых задач при обязательном наличии `.catch(err => logger.error(err))`.
-+- **Изоляция сбоев:** Асинхронные обработчики событий DOM должны оборачиваться в `try / catch`.
++- **Strictly ES Modules:** Use standard `import` and `export` statements.
++- **No Global Scope Pollution:** Never attach properties to `window.*` or `globalThis.*`.
++- **Variables:**
++  - `const` — Default for all variable declarations.
++  - `let` — Only when the value is explicitly reassigned.
++  - `var` — Strictly forbidden.
 +
 +---
 +
-+## 4. Ограничения размеров и сложность
++## 2. Comparisons & Type Safety
 +
-+- **Функция > 40 строк** — сигнал к декомпозиции.
-+- **Обработчики событий (`handle*`) > 80 строк** — запрещены. Обработчик должен лишь извлекать параметры из события и делегировать выполнение сервисному слою.
-+
-+---
-+
-+## 5. Работа с DOM и шаблонизация
-+
-+- **Запрет небезопасного HTML:**
-+  - Запрещена генерация больших фрагментов разметки через `element.innerHTML = '<div>...</div>'`.
-+  - Для динамических элементов используйте HTML `<template>` теги либо `document.createElement()`.
-+  - Допустима интерполяция в `innerHTML` только для простых скалярных значений после санитизации.
-+- **Кэширование DOM-запросов:**
-+  - Запрещены повторяющиеся вызовы `document.getElementById` или `document.querySelector` внутри циклов и в колбэках `requestAnimationFrame`.
-+  - Кэшируйте ссылки на DOM-элементы при инициализации модуля/компонента.
++- **Strict Equality:** Always use `===` and `!==`.
++- **No Loose Comparisons:** `==` and `!=` are forbidden to prevent unexpected type coercion.
++- **Optional Chaining & Nullish Coalescing:** Utilize `obj?.prop` and `val ?? defaultValue`.
 +
 +---
 +
-+## 6. Константы и конфигурации
++## 3. Asynchrony & Error Handling
 +
-+- **Именование:** `SCREAMING_SNAKE_CASE` для констант модуля.
-+- **Защита от мутаций:** Используйте `Object.freeze()` для экспортируемых объектов конфигураций и словарей перечислений.
-+- **Документирование:** Сопровождайте функции JSDoc-комментариями с описанием параметров и возвращаемых типов:
++- **Async / Await:** Prefer `async/await` syntax over complex `.then()` chains.
++- **Unhandled Promises:** Floating promises must be handled with `.catch(err => logger.error(err))`.
++- **DOM Event Isolation:** Asynchronous event callbacks should be wrapped in `try / catch` blocks.
++
++---
++
++## 4. Function Complexity & Handler Limits
++
++- **Function > 40 lines** — Signal for decomposition.
++- **Event Handlers (`handle*`) > 80 lines** — Forbidden. Handlers should only extract parameters and delegate execution to domain services.
++
++---
++
++## 5. DOM Manipulation & Templating
++
++- **Safe HTML Practices:**
++  - Setting raw HTML blobs via `innerHTML = '<div>...</div>'` is forbidden.
++  - Use HTML `<template>` elements or `document.createElement()`.
++  - Simple scalar values in `innerHTML` must be properly sanitized.
++- **DOM Query Caching:**
++  - Repeated calls to `document.getElementById` or `document.querySelector` inside loops or `requestAnimationFrame` callbacks are prohibited.
++  - Cache DOM references during module/component initialization.
++
++---
++
++## 6. Constants & Configurations
++
++- **Naming:** `SCREAMING_SNAKE_CASE` for module-level constants.
++- **Mutation Protection:** Use `Object.freeze()` for configuration dictionaries and enum objects.
++- **JSDoc:** Annotate public functions with parameter types and descriptions:
 +  ```javascript
 +  /**
-+   * Вычисляет итоговый размер буфера.
-+   * @param {number} baseSizeMb - Базовый размер в МБ.
-+   * @param {number} multiplier - Коэффициент масштабирования.
-+   * @returns {number} Размер в байтах.
++   * Computes the target buffer size.
++   * @param {number} baseSizeMb - Base buffer size in MB.
++   * @param {number} multiplier - Scaling multiplier.
++   * @returns {number} Buffer size in bytes.
 +   */
 +  ```
 diff --git a/.agents/rules/05-html.md b/.agents/rules/05-html.md
 new file mode 100644
-index 0000000..04b408b
+index 0000000..6f99211
 --- /dev/null
 +++ b/.agents/rules/05-html.md
 @@ -0,0 +1,57 @@
 +---
 +trigger: glob
 +globs: "*.html"
-+description: "Стандарты HTML5: семантическая разметка, доступность (a11y), шаблоны, разделение стилей и скриптов"
++description: "HTML5 standards: semantic markup, accessibility (a11y), clean separation of concerns, and template reuse"
 +---
 +
-+# 🌐 Стандарты HTML5 и разметки
-+
-+---
-+
-+## 1. Семантика структуры
-+
-+- **Семантические теги:** Используйте `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
-+- **Ограничение `<div>` и `<span>`:** Применяйте только как обёртки для стилизации или flex/grid контейнеров, когда нет подходящего семантического тега.
-+- **Иерархия заголовков:** Ровно один `<h1>` на страницу. Заголовки `<h2>`–`<h6>` следуют строгой иерархии без пропуска уровней.
++# 🌐 HTML5 & Markup Standards
 +
 +---
 +
-+## 2. Разделение ролей `id` и `class`
++## 1. Structural Semantics
 +
-+- **Атрибут `id`:** Предназначен исключительно для JavaScript-хуков, привязки лейблов форм (`for="input-id"`) и якорей навигации. Не используйте `id` для применения CSS-стилей.
-+- **Атрибут `class`:** Предназначен для CSS-стилизации и визуальных модификаторов.
-+- **Атрибуты `data-*`:** Для передачи параметров и состояния компонента в JS (например, `data-state="active"`, `data-user-id="123"`). Не кодируйте данные внутри имен классов.
-+
-+---
-+
-+## 3. Запрет инлайн-кода
-+
-+- **Запрет инлайн-стилей:** Атрибут `style="..."` запрещен (исключение: динамические координаты или трансформации, вычисляемые в JS, например `element.style.transform = ...`).
-+- **Запрет инлайн-скриптов:** Теги `<script>` без атрибута `src` и inline-обработчики (`onclick="..."`) запрещены. Используйте `<script type="module" src="...">`.
++- **Semantic Tags:** Use `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<aside>`, `<footer>`.
++- **Restricted `<div>` and `<span>`:** Use only as CSS layout wrappers (flex/grid containers) when no semantic element applies.
++- **Heading Hierarchy:** Exactly one `<h1>` per page. Sub-headings `<h2>` through `<h6>` must follow a strict non-skipping hierarchy.
 +
 +---
 +
-+## 4. Шаблонизация и повторы
++## 2. Separation of Concerns: `id`, `class`, `data-*`
 +
-+- **Тег `<template>`:** Повторяющиеся динамические фрагменты разметки (модальные окна, строки таблиц, карточки каталога) объявляются один раз внутри `<template id="...">` и клонируются через JS.
-+
-+---
-+
-+## 5. Доступность (a11y)
-+
-+- **Кнопки без текста:** Кнопки с иконками обязаны иметь `aria-label="Описание действия"`.
-+- **Изображения:** Обязательный атрибут `alt` (пустой `alt=""` только для чисто декоративных изображений).
-+- **Формы:** Каждый элемент ввода обязан иметь связанный `<label>` или `aria-labelledby`.
-+- **Интерактивные виджеты:** Кастомные элементы должны снабжаться атрибутами `role` и состояниями `aria-expanded`, `aria-hidden`, `aria-selected`.
++- **The `id` Attribute:** Reserved exclusively for JavaScript hooks, form label bindings (`for="input-id"`), and anchor targets. Never use `id` for CSS styling.
++- **The `class` Attribute:** Used exclusively for CSS styling and visual state modifiers.
++- **The `data-*` Attributes:** For passing state and parameters to JavaScript (`data-state="active"`, `data-user-id="123"`). Do not encode state in class names.
 +
 +---
 +
-+## 6. Форматирование и структура
++## 3. No Inline Code
 +
-+- **Порядок атрибутов:** Рекомендуемый порядок: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
-+- **Кавычки:** Всегда двойные кавычки для значений атрибутов.
-+- **Отступы:** Запрещено использовать теги `<br>` для создания отступов и интервалов — только CSS (`margin`, `padding`, `gap`).
-+- **Крупные секции:** Секции > 100 строк разделяются структурированными комментариями:
++- **No Inline Styles:** The `style="..."` attribute is forbidden (except for dynamic runtime transforms computed in JS, e.g., `element.style.transform = ...`).
++- **No Inline Scripts:** `<script>` tags without `src` and inline event handlers (`onclick="..."`) are forbidden. Use `<script type="module" src="...">`.
++
++---
++
++## 4. Templating & Component Reusability
++
++- **The `<template>` Element:** Reusable dynamic HTML snippets (modals, catalog cards, table rows) must be defined once inside `<template id="...">` and cloned via JS.
++
++---
++
++## 5. Accessibility (a11y)
++
++- **Icon-Only Buttons:** Buttons containing only icons must have an explicit `aria-label="Description of action"`.
++- **Images:** Mandatory `alt` attribute (empty `alt=""` only for purely decorative graphics).
++- **Forms:** Every form input must have an associated `<label>` or `aria-labelledby`.
++- **Custom Interactive Widgets:** Custom components must define appropriate `role` and state attributes (`aria-expanded`, `aria-hidden`, `aria-selected`).
++
++---
++
++## 6. Formatting & Cleanliness
++
++- **Attribute Order:** Standard order: `id` → `class` → `data-*` → `type` / `name` / `value` → `aria-*` / `role`.
++- **Quotes:** Double quotes for all attribute values.
++- **Spacing:** `<br>` tags are forbidden for vertical spacing. Use CSS margins/padding/gap.
++- **Large Sections:** Divide sections > 100 lines with structured comments:
 +  ```html
 +  <!-- ==================== SECTION: METRICS PANEL ==================== -->
 +  ```
 diff --git a/.agents/rules/06-css.md b/.agents/rules/06-css.md
 new file mode 100644
-index 0000000..4600463
+index 0000000..06066db
 --- /dev/null
 +++ b/.agents/rules/06-css.md
 @@ -0,0 +1,67 @@
 +---
 +trigger: glob
 +globs: "*.css"
-+description: "Стандарты CSS3: дизайн-токены в :root, лимит вложенности селекторов, БЭМ/утилиты, @layer"
++description: "CSS3 & styling standards: design tokens in :root, selector nesting limits, utility classes, and @layer cascading"
 +---
 +
-+# 🎨 Стандарты CSS3 и стилизации
++# 🎨 CSS3 & Styling Standards
 +
 +---
 +
-+## 1. Дизайн-токены и переменные
++## 1. Design Tokens & Variables
 +
-+- **Централизация в `:root`:** Цветовая палитра, шкала отступов, радиусы скруглений, типографика и тени объявляются исключительно через CSS-переменные:
++- **Centralized in `:root`:** Palette colors, spacing scales, border radii, typography tokens, and shadows must be defined exclusively via CSS custom properties:
 +  ```css
 +  :root {
 +    --color-bg-primary: #0d1117;
@@ -167,43 +167,43 @@ index 0000000..4600463
 +    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.12);
 +  }
 +  ```
-+- **Запрет магических значений:** Прямое использование сырых HEX/RGB-кодов и произвольных размеров в телах правил запрещено.
++- **No Raw Magic Values:** Direct use of arbitrary HEX/RGB codes and unscaled dimensions in rule bodies is forbidden.
 +
 +---
 +
-+## 2. Единицы измерения
++## 2. Measurement Units
 +
-+- **Шрифты и отступы:** Используйте `rem` для масштабируемости интерфейса.
-+- **Тонкие границы:** Используйте `px` для `border: 1px solid ...` и разделительных линий.
-+- **Единица `em`:** Избегайте использования `em` за исключением компонентов с контекстным масштабированием (например, размеры иконок относительно размера текста кнопки).
-+
-+---
-+
-+## 3. Селекторы и специфичность
-+
-+- **Лимит вложенности:** Максимум 3 уровня селекторов (например, `.card .header .title`). Селекторы вида `.a .b .c .d .e` запрещены.
-+- **Запрет `!important`:** Модификатор `!important` запрещён (допустим исключительно для принудительного переопределения недоступных стилей внешних сторонних библиотек с обязательным поясняющим комментарием).
-+- **Именование:** Используйте плоские BEM-подобные классы (`.btn`, `.btn--primary`, `.card__header`) или утилитарные классы.
++- **Typography & Spacing:** Use `rem` for responsive and scalable UI elements.
++- **Borders & Thin Lines:** Use `px` for `border: 1px solid ...` and hairline dividers.
++- **The `em` Unit:** Avoid `em` except for context-scaling icons relative to parent text sizes.
 +
 +---
 +
-+## 4. Повторное использование и компоненты
++## 3. Selectors & Specificity
 +
-+- **Базовые классы + модификаторы:** Создавайте общие классы для повторяющихся элементов (`.card`, `.btn`, `.panel`, `.badge`). Запрещено дублировать набор `background + border + border-radius + padding` по десяткам несвязанных селекторов.
-+- **Утилиты эффектов:** Выносите типовые эффекты (свечения, размытия, скроллбары) в отдельные классы (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
-+- **Скроллбары:** Определяйте стили скроллбара один раз через централизованные селекторы или класс, избегая размножения копий.
++- **Nesting Limit:** Maximum 3 levels of nesting (e.g., `.card .header .title`). Long chains like `.a .b .c .d .e` are forbidden.
++- **No `!important`:** `!important` is forbidden (allowed only to override unmodifiable third-party CSS libraries, with an explanatory comment).
++- **Naming Conventions:** Use flat BEM-like classes (`.btn`, `.btn--primary`, `.card__header`) or reusable utility classes.
 +
 +---
 +
-+## 5. Организация и модульность
++## 4. Reusability & Component Patterns
 +
-+- **Медиа-запросы:** Группируйте адаптивные правила в конце файла либо выносите в выделенный `responsive.css`. Избегайте рассеивания мелких `@media` блоков по всему файлу.
-+- **Лимит размера файла:** При достижении файлом > 1000 строк разделите его на логические модули:
-+  - `tokens.css` (переменные и тема)
-+  - `layout.css` (сетка, контейнеры, шапка, подвал)
-+  - `components.css` (кнопки, формы, карточки, модалки)
-+- **Каскадные слои (`@layer`):** Если поддерживается проектом, используйте `@layer base, layout, components, utilities;` для строгого контроля специфичности.
-+- **Разделители секций:**
++- **Base Classes + Modifiers:** Establish common base styles (`.card`, `.btn`, `.panel`, `.badge`). Never duplicate `background + border + border-radius + padding` across disconnected selectors.
++- **Visual Utilities:** Extract shared effects (glows, glassmorphism, scrollbars) into utility classes (`.glow-accent`, `.custom-scrollbar`, `.glass-panel`).
++- **Scrollbars:** Define custom scrollbar styling once globally or via a utility class.
++
++---
++
++## 5. Organization & Modularity
++
++- **Media Queries:** Group responsive rules at the end of the file or extract to `responsive.css`. Do not scatter isolated `@media` blocks arbitrarily.
++- **File Decomposition (> 1000 lines):** Split large stylesheets into focused modules:
++  - `tokens.css` (variables and theme tokens)
++  - `layout.css` (grid, flex containers, header, footer)
++  - `components.css` (buttons, forms, cards, modals)
++- **Cascade Layers (`@layer`):** When supported, use `@layer base, layout, components, utilities;` for predictable specificity.
++- **Section Dividers:**
 +  ```css
 +  /* ==========================================================================
 +     CARD COMPONENT

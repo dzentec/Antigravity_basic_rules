@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Установка пакета правил Antigravity в целевой проект (PowerShell).
+    Install Antigravity rules package into a target project (PowerShell).
 .EXAMPLE
     .\install.ps1 -Target "D:\Projects\MyProject"
     .\install.ps1 -Target "D:\Projects\MyProject" -Mode Dry
@@ -21,22 +21,22 @@ $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $resolvedTarget = Resolve-Path $Target
 
-Write-Host "Целевой проект: $resolvedTarget" -ForegroundColor Cyan
-Write-Host "Режим работы:   $Mode`n" -ForegroundColor Cyan
+Write-Host "Target Project: $resolvedTarget" -ForegroundColor Cyan
+Write-Host "Mode:           $Mode`n" -ForegroundColor Cyan
 
 switch ($Mode) {
     "Dry" {
-        Write-Host "=== ПРОВЕРКА ПРИМЕНИМОСТИ PATCH ===" -ForegroundColor Yellow
+        Write-Host "=== CHECKING PATCH APPLICABILITY ===" -ForegroundColor Yellow
         Push-Location $resolvedTarget
         try {
             git apply --check (Join-Path $scriptDir "diff\install.patch")
-            Write-Host "✅ install.patch успешно применим к проекту!" -ForegroundColor Green
+            Write-Host "✅ install.patch is cleanly applicable!" -ForegroundColor Green
         } finally {
             Pop-Location
         }
     }
     "Revert" {
-        Write-Host "=== ОТКАТ ПРАВИЛ ===" -ForegroundColor Yellow
+        Write-Host "=== ROLLING BACK RULES ===" -ForegroundColor Yellow
         Push-Location $resolvedTarget
         try {
             $uninstallPatch = Join-Path $scriptDir "diff\uninstall.patch"
@@ -45,13 +45,13 @@ switch ($Mode) {
             } else {
                 git apply -R (Join-Path $scriptDir "diff\install.patch")
             }
-            Write-Host "✅ Пакет правил успешно откачен!" -ForegroundColor Green
+            Write-Host "✅ Rules package successfully rolled back!" -ForegroundColor Green
         } finally {
             Pop-Location
         }
     }
     "Copy" {
-        Write-Host "=== ПРЯМОЕ КОПИРОВАНИЕ ФАЙЛОВ ===" -ForegroundColor Yellow
+        Write-Host "=== DIRECT FILE COPY ===" -ForegroundColor Yellow
         $rulesDst = Join-Path $resolvedTarget ".agents\rules"
         $scriptsDst = Join-Path $resolvedTarget "scripts"
         
@@ -59,14 +59,14 @@ switch ($Mode) {
         Copy-Item (Join-Path $scriptDir "rules\*.md") $rulesDst -Force
         Copy-Item (Join-Path $scriptDir "hooks\hooks.json") (Join-Path $resolvedTarget ".agents\hooks.json") -Force -ErrorAction SilentlyContinue
         Copy-Item (Join-Path $scriptDir "hooks\graph-router.sh") $scriptsDst -Force -ErrorAction SilentlyContinue
-        Write-Host "✅ Файлы успешно скопированы в $resolvedTarget" -ForegroundColor Green
+        Write-Host "✅ Files successfully copied to $resolvedTarget" -ForegroundColor Green
     }
     "Patch" {
-        Write-Host "=== ПРИМЕНЕНИЕ INSTALL.PATCH ===" -ForegroundColor Yellow
+        Write-Host "=== APPLYING INSTALL.PATCH ===" -ForegroundColor Yellow
         Push-Location $resolvedTarget
         try {
             git apply (Join-Path $scriptDir "diff\install.patch")
-            Write-Host "✅ install.patch успешно применён в проекте!" -ForegroundColor Green
+            Write-Host "✅ install.patch successfully applied to project!" -ForegroundColor Green
         } finally {
             Pop-Location
         }

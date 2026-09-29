@@ -1,55 +1,54 @@
 ---
 trigger: model_decision
-description: "Стандарты коммитов (Conventional Commits): атомарность, формат заголовка и тела, запрет мусорных файлов"
+description: "Git commit standards: Conventional Commits, atomicity, focus on the rationale (WHY), and git repository hygiene"
 ---
 
-# 📦 Стандарты оформления коммитов и управления Git
-
----
-
-## 1. Принципы атомарности и частоты
-
-- **Один коммит = одно логическое изменение:** Запрещено объединять в один коммит реализацию новой фичи и попутный рефакторинг других модулей.
-- **Зелёный статус:** Каждый коммит должен оставлять кодовую базу в компилируемом и проходящем тесты состоянии.
-- **Разделение рефакторинга:** Структурные изменения и переименования выполняются в отдельных коммитах от бизнес-логики.
-- **Предварительный просмотр:** Перед фиксацией всегда проверяйте подготовленные изменения через `git diff --staged`.
+# 📦 Git Commit Standards & Repository Hygiene
 
 ---
 
-## 2. Формат сообщения коммита
+## 1. Atomicity & Frequency
 
-Сообщения формируются по спецификации Conventional Commits:
+- **One Commit = One Logical Change:** Never mix new feature logic with unrelated refactoring or cleanup.
+- **Green Builds:** Every commit must leave the repository in a compiling, passing test state.
+- **Separate Refactoring:** Structural changes and renames must be committed separately from functional feature changes.
+- **Pre-Commit Review:** Always inspect staged changes via `git diff --staged` before committing.
+
+---
+
+## 2. Commit Message Structure
+
+Follow the Conventional Commits specification:
 
 ```text
-<тип>(<область_видимости>): <краткое описание в повелительном наклонении>
+<type>(<scope>): <concise description in imperative mood>
 
-<детальное описание причины (ПОЧЕМУ было сделано изменение)>
+<detailed explanation of WHY the change was made>
 
-[Ссылки на задачи: Closes #123]
+[References: Closes #123]
 ```
 
-### Типы изменений:
-- `feat` — добавление новой функциональности для пользователя
-- `fix` — исправление ошибки в существующей логике
-- `refactor` — изменение внутренней структуры кода без изменения внешнего поведения
-- `test` — добавление или корректировка тестов
-- `perf` — оптимизация производительности
-- `docs` — изменения исключительно в документации
-- `chore` — обновление зависимостей, сборки, конфигурации линтеров
+### Commit Types:
+- `feat` — New feature or capability for the user
+- `fix` — Bugfix in existing functionality
+- `refactor` — Code restructuring with no behavior change
+- `test` — Adding or updating test suites
+- `perf` — Performance optimization
+- `docs` — Documentation changes only
+- `chore` — Dependency updates, build configs, linters
 
-### Правила оформления:
-1. **Первая строка (Title):** Не более 72 символов, в повелительном наклонении, строчными буквами, без точки в конце.
-2. **Тело сообщения (Body):** Фокусируется на вопросе **«Зачем / Почему»**, а не «Что» (что именно изменено видно в diff).
-3. **Несовместимые изменения (Breaking Changes):** Обозначаются восклицательным знаком после типа (например, `feat(api)!: изменить структуру ответа`) и секцией `BREAKING CHANGE:` в теле.
-4. **Языковое единообразие:** Если в репозитории принят русский язык для коммитов — используйте русский. Если английский — английский.
-5. **Запрещённые формулировки:** Запрещены бессодержательные заголовки: `fix`, `minor changes`, `wip`, `update`, `исправил ошибки`.
+### Formatting Rules:
+1. **Title Line:** Maximum 72 characters, lowercase, imperative mood ("add", not "added" or "adds"), no trailing period.
+2. **Message Body:** Focus on **WHY** the change was made (the diff shows "what").
+3. **Breaking Changes:** Indicated by an exclamation mark after the type (`feat(api)!: change response envelope`) and a `BREAKING CHANGE:` section in the body.
+4. **No Vague Messages:** Messages like `fix`, `wip`, `minor updates`, `cleanup` are strictly forbidden.
 
 ---
 
-## 3. Запрет коммита временных и служебных файлов
+## 3. Repository Hygiene: Prohibited Junk Files
 
-Строго запрещено добавлять в индекс и коммитить:
-- Переменные окружения и секреты (`.env`, `.env.local`, `*.pem`, `credentials.json`)
-- Артефакты сборки и кэши (`__pycache__/`, `.pytest_cache/`, `dist/`, `build/`, `node_modules/`, `*.pyc`)
-- Временные директории и логи (`scratch/`, `*.log`, `.tmp/`)
-- Локальные настройки сред разработки (`.idea/`, `.vscode/settings.json`)
+Strictly forbidden from staging or committing:
+- Environment variables and secrets (`.env`, `.env.local`, `*.pem`, `credentials.json`)
+- Build artifacts and caches (`__pycache__/`, `.pytest_cache/`, `dist/`, `build/`, `node_modules/`, `*.pyc`)
+- Transient logs and scratch directories (`scratch/`, `*.log`, `.tmp/`)
+- Local IDE configurations (`.idea/`, `.vscode/settings.json`)

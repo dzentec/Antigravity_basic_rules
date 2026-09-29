@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Упаковка и распаковка правил в Markdown-бандл (PowerShell).
+    Pack rules into a single Markdown bundle and extract it (PowerShell).
 .EXAMPLE
     .\pack.ps1 pack
     .\pack.ps1 unpack "D:\Projects\TargetProject"
@@ -56,7 +56,7 @@ if ($Action -eq "pack") {
         [void]$sb.AppendLine("")
     }
     
-    # 3. Graph router script (scripts/graph-router.sh)
+    # 3. Router script (scripts/graph-router.sh)
     $gRouter = Join-Path $hooksDir "graph-router.sh"
     if (Test-Path $gRouter) {
         [void]$sb.AppendLine("## scripts/graph-router.sh")
@@ -68,11 +68,11 @@ if ($Action -eq "pack") {
     
     [System.IO.File]::WriteAllText($bundle, $sb.ToString(), [System.Text.Encoding]::UTF8)
     $bytes = (Get-Item $bundle).Length
-    Write-Host "✅ Собрано: $bundle ($bytes байт)" -ForegroundColor Green
+    Write-Host "✅ Built: $bundle ($bytes bytes)" -ForegroundColor Green
 }
 elseif ($Action -eq "unpack") {
     if (-not (Test-Path $bundle)) {
-        Write-Host "❌ Файл $bundle не найден. Сначала выполните: .\pack.ps1 pack" -ForegroundColor Red
+        Write-Host "❌ File $bundle not found. Run: .\pack.ps1 pack first" -ForegroundColor Red
         exit 1
     }
     
@@ -109,6 +109,6 @@ elseif ($Action -eq "unpack") {
         }
     }
     
-    Write-Host "`nСоздано: $created" -ForegroundColor Cyan
-    Write-Host "Пропущено: $skipped" -ForegroundColor Cyan
+    Write-Host "`nCreated: $created" -ForegroundColor Cyan
+    Write-Host "Skipped: $skipped" -ForegroundColor Cyan
 }

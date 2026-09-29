@@ -1,90 +1,90 @@
 ---
 trigger: always_on
-description: "Критические запреты и антипаттерны: запрет костылей, чистота кода, валидация через схемы, безопасность"
+description: "Prohibited anti-patterns and security invariants: strict code hygiene, schema validation, and vulnerability prevention"
 ---
 
-# 🚫 Каталог критических запретов (No Crutches & Security)
+# 🚫 Prohibitions & Security Invariants (No Crutches)
 
-Обнаружение или попытка внесения любого из перечисленных ниже паттернов является основанием для **немедленной остановки работы** и эскалации пользователю.
+Encountering or attempting to introduce any of the patterns listed below is grounds for **immediate generation stoppage** and escalation to the user.
 
 ---
 
-## 1. Реестр архитектурных запретов
+## 1. Architectural Prohibitions
 
-1. **Глобальные переменные в JS:**
+1. **Global Variables in JS:**
    - ❌ `window.X = ...`, `global.X = ...`
-   - ✅ Использование стандартных ES-модулей (`export` / `import`).
-2. **Замалчивание исключений:**
+   - ✅ Standard ES Modules (`export` / `import`).
+2. **Silent Exception Swallowing:**
    - ❌ `try: ... except Exception: pass`, `catch (e) {}`
-   - ✅ Перехват строго конкретных типов ошибок с логированием контекста и причины.
-3. **Хардкод больших структур данных:**
-   - ❌ Встраивание статических массивов/словарей > 20 строк внутрь исполняемых файлов.
-   - ✅ Вынос во внешние файлы конфигураций (`JSON`, `YAML`, `TOML`).
-4. **Ручная валидация типов:**
-   - ❌ Множественные ручные проверки вида `if not isinstance(...)` или каскады `typeof`.
-   - ✅ Декларативная валидация через схемы (Pydantic в Python, Zod / Yup / Joi в JS/TS).
-5. **Дублирование логики:**
-   - ❌ Копирование фрагментов кода > 5 строк между модулями или файлами.
-   - ✅ Выделение в общие вспомогательные функции в слое `shared/` / `lib/`.
-6. **Циклические и обратные импорты из пакетов:**
-   - ❌ Импорт из собственного `__init__.py` или `index.js` внутри того же пакета.
-   - ✅ Прямой импорт из конкретных дочерних модулей.
-7. **Подавление проверок типов без обоснования:**
-   - ❌ Безосновательные `# type: ignore`, `@ts-ignore`, `eslint-disable`.
-   - ✅ Корректное описание типов либо комментарий с детальным объяснением причины и ссылки на issue.
-8. **Анонимные и бессрочные TODO:**
-   - ❌ Комментарии `// TODO: fix this`, `# TODO: refactor`.
-   - ✅ TODO с указанием автора, даты и условия/задачи (`TODO(username, 2026-10-01): task-id`).
-9. **Магические значения:**
-   - ❌ Числа и строки в логических выражениях без именования.
-   - ✅ Вынос в константы модуля.
-10. **Константы без описания:**
-    - ❌ Недокументированные константы с неочевидным смыслом.
-    - ✅ JSDoc / TypeDoc / комментарий с указанием назначения и физического смысла.
-11. **Мёртвый и закомментированный код:**
-    - ❌ Оставление закомментированных блоков старого кода.
-    - ✅ Полное удаление — история изменений надежно сохраняется в Git.
+   - ✅ Catch specific exception types, log context, and handle cleanly.
+3. **Hardcoded Data Blobs:**
+   - ❌ Embedding static dictionaries/arrays > 20 lines in source files.
+   - ✅ External configuration files (`JSON`, `YAML`, `TOML`).
+4. **Manual Type Checking:**
+   - ❌ Cascades of `if not isinstance(...)` or `typeof x === ...`.
+   - ✅ Declarative schema validation (Pydantic in Python, Zod / Yup in JS/TS).
+5. **Code Duplication:**
+   - ❌ Duplicating logic blocks > 5 lines across multiple files.
+   - ✅ Extracting to shared helper utilities in `shared/` or `lib/`.
+6. **Circular & Package Root Imports:**
+   - ❌ Importing from own `__init__.py` or `index.js` within the same package.
+   - ✅ Direct imports from explicit child modules.
+7. **Unjustified Type Ignore Directives:**
+   - ❌ Unexplained `# type: ignore`, `@ts-ignore`, `eslint-disable`.
+   - ✅ Proper type definitions or explicit comments documenting why the ignore is needed.
+8. **Anonymous / Undated TODOs:**
+   - ❌ Comments like `// TODO: fix this`, `# TODO: refactor`.
+   - ✅ Actionable TODOs with author, date, and task reference (`TODO(username, 2026-10-01): task-id`).
+9. **Magic Literals in Expressions:**
+   - ❌ Raw numbers and strings in conditional branches.
+   - ✅ Extracted module constants.
+10. **Undocumented Constants:**
+    - ❌ Ambiguous constant values without docstrings or comments.
+    - ✅ JSDoc / docstrings explaining meaning and units.
+11. **Dead / Commented-Out Code:**
+    - ❌ Leaving commented-out legacy code blocks.
+    - ✅ Complete deletion — Git tracks history.
 
 ---
 
-## 2. Реестр правил безопасности (Security Invariants)
+## 2. Security Invariants
 
-12. **Секреты и учетные данные в коде:**
-    - ❌ Хардкод API-ключей, токенов, паролей, секретов (`API_KEY = "sk-..."`, `SECRET = "..."`).
-    - ✅ Чтение исключительно через переменные окружения (`os.environ`, `process.env`), защищённые `.env`-файлы (добавленные в `.gitignore`) или Secret Manager / Vault.
-13. **Инъекции в запросах и командах (SQL / Command Injection):**
-    - ❌ Формирование SQL-запросов или системных вызовов через f-строки и конкатенацию (`f"SELECT * FROM users WHERE id = '{user_id}'"`).
-    - ✅ Только параметризованные запросы (prepared statements) или ORM / Query Builder.
-14. **Динамическое исполнение кода (Code Injection):**
-    - ❌ Вызовы `eval()`, `exec()` в Python, `eval()`, `new Function(...)` в JS.
-    - ✅ Использование безопасных десериализаторов (`json.loads`, `ast.literal_eval`, `JSON.parse`).
-15. **Небезопасный рендеринг HTML (XSS):**
-    - ❌ Прямая вставка несанитизированного пользовательского ввода через `dangerouslySetInnerHTML`, `innerHTML = untrusted_str`.
-    - ✅ Использование `textContent`, безопасных шаблонизаторов или санитизация через библиотеки (DOMPurify).
-16. **Небезопасное выполнение системных процессов:**
-    - ❌ Вызовы вида `subprocess.run(f"cmd {user_input}", shell=True)` или `child_process.exec(...)`.
-    - ✅ Передача аргументов строго списком с отключенным shell: `subprocess.run(["cmd", arg1, arg2], shell=False)`, `child_process.execFile(...)`.
-17. **Небезопасная десериализация недоверенных данных (RCE):**
-    - ❌ `pickle.loads()` / `pickle.load()`, `_pickle`, `shelve` на данных от пользователя / сети.
-    - ❌ `yaml.load()` без безопасного лоадера (`yaml.load(data, Loader=yaml.Loader)`).
-    - ✅ `json.loads()` / `json.load()` для JSON.
-    - ✅ `yaml.safe_load()` для YAML.
-    - ✅ `pydantic` / `msgspec` для валидированных структурированных DTO.
-18. **Выход за пределы директории (Path Traversal):**
-    - ❌ `os.path.join(base_dir, user_filename)` или `Path(base_dir) / user_input` без проверки выхода.
-    - ✅ `Path.resolve()` с обязательной проверкой нахождения внутри базового каталога:
+12. **Secrets and Credentials in Code:**
+    - ❌ Hardcoded API keys, tokens, passwords (`API_KEY = "sk-..."`, `SECRET = "..."`).
+    - ✅ Read strictly from environment variables (`os.environ`, `process.env`), `.env` files (in `.gitignore`), or Secret Vaults.
+13. **Query & Command Injections (SQL / Command Injection):**
+    - ❌ Raw string formatting for queries or shell commands (`f"SELECT * FROM users WHERE id = '{user_id}'"`).
+    - ✅ Parameterized queries (prepared statements) or ORM query builders.
+14. **Dynamic Code Execution (Code Injection):**
+    - ❌ `eval()`, `exec()` in Python, `eval()`, `new Function(...)` in JS.
+    - ✅ Safe deserializers (`json.loads`, `ast.literal_eval`, `JSON.parse`).
+15. **Unsafe HTML Rendering (XSS):**
+    - ❌ Raw user input in `dangerouslySetInnerHTML` or `innerHTML = untrusted_str`.
+    - ✅ Safe DOM methods (`textContent`), template sanitization, or DOMPurify.
+16. **Unsafe Process Spawning:**
+    - ❌ `subprocess.run(f"cmd {user_input}", shell=True)` or `child_process.exec(...)`.
+    - ✅ Arguments passed strictly as a list with shell disabled: `subprocess.run(["cmd", arg1, arg2], shell=False)`, `child_process.execFile(...)`.
+17. **Unsafe Deserialization (RCE):**
+    - ❌ `pickle.loads()` / `pickle.load()`, `_pickle`, `shelve` on untrusted user or network input.
+    - ❌ `yaml.load()` without safe loader (`yaml.load(data, Loader=yaml.Loader)`).
+    - ✅ `json.loads()` for JSON.
+    - ✅ `yaml.safe_load()` for YAML.
+    - ✅ `pydantic` / `msgspec` for validated structured schemas.
+18. **Directory Escape (Path Traversal):**
+    - ❌ `os.path.join(base_dir, user_filename)` or `Path(base_dir) / user_input` without containment validation.
+    - ✅ `Path.resolve()` with mandatory containment checks:
       ```python
       target = (base_dir / user_input).resolve()
       if not target.is_relative_to(base_dir.resolve()):
           raise PermissionError("Path traversal detected")
       ```
-    - ✅ `Path(user_input).name` для надежного извлечения только имени файла.
+    - ✅ `Path(user_input).name` to safely extract only the filename.
 
 ---
 
-## 3. Протокол эскалации при невозможности прямого решения
+## 3. Escalation Protocol
 
-Если поставленная задача технически не может быть решена без применения костыля или компромисса безопасности, агент **обязан остановить генерацию** и уведомить пользователя по шаблону:
+If a task cannot be achieved without violating an architectural rule or security invariant, the agent **MUST halt generation** and notify the user:
 
-> ⚠️ **Предупреждение архитектурного контроля:**
-> «Решение задачи требует структурного изменения в модуле `<имя_модуля>`. Применение временного решения нарушит правило `<номер_правила>`. Рекомендуется предварительно провести рефакторинг `<описание_рефакторинга>` перед реализацией фичи.»
+> ⚠️ **Architectural Control Alert:**
+> "Resolving this task cleanly requires structural changes in module `<module_name>`. Applying a quick workaround would violate rule `<rule_number>`. Recommend performing refactoring `<refactoring_details>` before implementing this feature."

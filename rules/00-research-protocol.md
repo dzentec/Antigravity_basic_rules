@@ -1,89 +1,89 @@
 ---
 trigger: always_on
-description: "Протокол исследования кодовой базы перед изменениями: граф зависимостей, blast radius, fallback на grep"
+description: "Codebase research protocol before changes: dependency graph, blast radius estimation, grep fallback, and verification"
 ---
 
-# 🔍 Протокол исследования кодовой базы
+# 🔍 Codebase Research Protocol
 
-Перед ЛЮБЫМ изменением кода агент обязан построить карту зависимостей и оценить радиус поражения (blast radius).
-
----
-
-## 1. Приоритет исследования
-
-При поиске и анализе зависимостей строго соблюдается порядок:
-1. **MCP Граф знаний** (если зарегистрирован в среде — например, `codebase-memory-mcp` или аналогичный graph server) — приоритетный инструмент для анализа структуры кода и связей.
-2. **Grep / Ripgrep** — режим деградации (degraded mode), если инструменты графа недоступны в текущем окружении, либо для поиска неструктурированных данных (строковые литералы, конфиги, переменные окружения).
-3. **Прямое чтение файлов** — точечно, после локализации цели через граф или grep.
+Before making ANY code changes, the agent MUST map dependencies and assess the blast radius.
 
 ---
 
-## 2. Работа через граф знаний (при наличии MCP-инструментов)
+## 1. Research Priority
 
-### 2.1. Проверка доступности инструментов графа
-Перед началом исследования проверьте наличие и отклик инструментов графа:
-- Если инструменты графа доступны (например, `search_graph`, `trace_path`, `query_graph`) — выполняем исследование через них.
-- Если инструменты графа не зарегистрированы или возвращают ошибку доступности сервера — фиксируем **режим деградации (degraded mode)** и штатно переходим к поиску через grep/ripgrep.
-
-### 2.2. Порядок исследования символа / модуля
-1. **Локализация:** Поиск определения сущности по имени или шаблону (например, `search_graph(name_pattern="<ИмяСимвола>")`).
-2. **Входящие вызовы (кто зависит от нас):** Анализ входящих ссылок и потребителей (например, `trace_path(..., direction="inbound", depth=3)`).
-3. **Исходящие вызовы (от кого зависим мы):** Анализ используемых зависимостей (например, `trace_path(..., direction="outbound", depth=3)`).
-4. **Исходный код:** Чтение целевого фрагмента реализации (например, `get_code_snippet(...)`).
-
-### 2.3. Оценка Blast Radius (радиус поражения)
-- **Inbound > 10:** Критический узел / публичный контракт. Любое изменение сигнатуры считается breaking change. Требуется явное планирование и одновременное обновление всех потребителей.
-- **Outbound > 5:** Узел-концентратор (хаб). Рефакторинг и декомпозиция требуют предварительного плана.
-- **Циклические зависимости:** При обнаружении фиксируются в отчёте. Исправление циклов выполняется отдельной задачей, а не «заодно».
+When locating and analyzing dependencies, follow this strict priority order:
+1. **MCP Knowledge Graph** (if available in the environment, e.g., `codebase-memory-mcp` or equivalent) — primary and preferred tool for structural discovery and relationship mapping.
+2. **Grep / Ripgrep** — degraded mode, used when knowledge graph tools are unavailable in the current environment, or for discovering unstructured data (string literals, configs, environment variables).
+3. **Direct File Inspection** — targeted reading, after localizing the target via graph or grep.
 
 ---
 
-## 3. Режим деградации (Fallback на Grep)
+## 2. Working via Knowledge Graph (When MCP Tools are Present)
 
-Используется при отсутствии MCP-сервера графа либо для неструктурированных файлов:
-- Поисковые запросы формулируются максимально узко и специфично (с указанием расширений файлов).
-- Поиск по файлам > 400 строк выполняется с ограничением диапазона или построчным чтением.
-- В итоговом отчёте указывается статус `Режим исследования: degraded mode (grep)`.
+### 2.1. Graph Tool Availability Check
+Before initiating research, check for graph tool responsiveness:
+- If graph tools are active (e.g., `search_graph`, `trace_path`, `query_graph`) — proceed in standard graph mode.
+- If graph tools are unregistered or return connection errors — record **degraded mode** and fall back seamlessly to grep/ripgrep.
+
+### 2.2. Symbol & Module Investigation Flow
+1. **Localization:** Find the definition by name or pattern (e.g., `search_graph(name_pattern="<SymbolName>")`).
+2. **Inbound Callers (who depends on this):** Trace incoming consumers (e.g., `trace_path(..., direction="inbound", depth=3)`).
+3. **Outbound Dependencies (what this depends on):** Trace outgoing calls (e.g., `trace_path(..., direction="outbound", depth=3)`).
+4. **Source Implementation:** Read targeted code slices (e.g., `get_code_snippet(...)`).
+
+### 2.3. Blast Radius Assessment
+- **Inbound > 10:** Critical node / public contract. Any signature modification is a breaking change requiring explicit planning and atomic updates across all consumers.
+- **Outbound > 5:** Hub node. Refactoring or decomposing requires a structured step-by-step plan.
+- **Circular Dependencies:** Record immediately if detected. Do NOT attempt to fix circular dependencies casually as part of an unrelated task.
 
 ---
 
-## 4. Верификация после изменений
+## 3. Degraded Mode (Fallback to Grep)
 
-После внесения правок в код:
-1. Повторно проверить входящие зависимости (через граф или поиск использований) для изменённых функций/классов.
-2. Убедиться, что сигнатуры и типы данных всех вызывающих компонентов согласованы.
-3. Запустить релевантные тесты затронутых модулей.
+Used when graph tools are unavailable or when inspecting non-code assets:
+- Craft narrow, highly specific search queries (filtering by file extensions).
+- For files exceeding 400 lines, use line-range queries or chunked reading.
+- Record `Research Mode: degraded mode (grep)` in the change report.
 
 ---
 
-## 5. Формат отчёта после внесения изменений
+## 4. Post-Change Verification
 
-Каждое изменение кода сопровождается отчётом следующей структуры:
+After making changes to source code:
+1. Re-verify inbound callers (via graph or symbol references) for all modified functions and classes.
+2. Ensure signatures, return types, and schemas remain consistent across all consumers.
+3. Run relevant test suites covering all affected modules.
+
+---
+
+## 5. Post-Change Report Format
+
+Every code modification must conclude with a structured report:
 
 ```markdown
-### Что изменено
-- Файл, диапазон строк, целевой символ/модуль
+### Changes Made
+- File, line range, target symbol/module
 
-### Режим исследования
-- Граф доступен: да / нет (degraded mode)
+### Research Mode
+- Graph Available: yes / no (degraded mode)
 
-### Граф зависимостей
-- Inbound: <список вызывающих / количество>
-- Outbound: <список зависимостей>
-- Циклические зависимости: обнаружены / не обнаружены
+### Dependency Analysis
+- Inbound: <list of callers / count>
+- Outbound: <list of dependencies>
+- Circular Dependencies: none / detected (<details>)
 
 ### Blast Radius
-- Затронуто модулей: <число>
-- Breaking change: нет / да (обоснование)
+- Affected Modules Count: <number>
+- Breaking Change: no / yes (<rationale>)
 
-### Константы и Безопасность
-- Константы вынесены в шапку / конфиг: да
-- Секреты / хардкод учетных данных: отсутствуют
-- Магические значения: отсутствуют
+### Constants & Security
+- Constants defined at module top / config: yes
+- Secrets / hardcoded credentials: none
+- Magic values: none
 
-### Тесты
-- Запущено: <команда>, статус: pass / fail
+### Tests
+- Command: `<test command>`, Status: pass / fail
 
-### Контроль качества (No-Crutches)
-- Нарушения правил и временные костыли: отсутствуют
+### Quality Control (No-Crutches)
+- Rule violations / temporary workarounds: none
 ```

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# pack.sh — Упаковка правил в один Markdown-бандл и его распаковка
+# pack.sh — Pack rules into a single Markdown bundle and extract it
 #
-# Использование:
-#   ./pack.sh pack              — собрать pack/rules-bundle.md
-#   ./pack.sh unpack [target]   — распаковать в целевую директорию (.agents/, scripts/)
+# Usage:
+#   ./pack.sh pack              — build pack/rules-bundle.md
+#   ./pack.sh unpack [target]   — extract to target directory (.agents/, scripts/)
 # ==============================================================================
 
 set -euo pipefail
@@ -12,7 +12,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUNDLE="$SCRIPT_DIR/pack/rules-bundle.md"
 
-# Определение директории с правилами (поддерживает draft/ и rules/)
 if [ -d "$SCRIPT_DIR/rules" ]; then
     RULES_DIR="$SCRIPT_DIR/rules"
 elif [ -d "$SCRIPT_DIR/draft" ]; then
@@ -30,7 +29,7 @@ pack() {
     echo "# Rules Bundle" >> "$BUNDLE"
     echo "" >> "$BUNDLE"
 
-    # 1. Правила (.agents/rules/)
+    # 1. Rules (.agents/rules/)
     for f in "$RULES_DIR"/0*.md "$RULES_DIR"/[0-9]*.md; do
         [ -f "$f" ] || continue
         echo "## .agents/rules/$(basename "$f")" >> "$BUNDLE"
@@ -41,7 +40,7 @@ pack() {
         echo "" >> "$BUNDLE"
     done
 
-    # 2. Хуки (.agents/hooks.json напрямую в .agents/)
+    # 2. Hooks (.agents/hooks.json directly under .agents/)
     if [ -f "$HOOKS_DIR/hooks.json" ]; then
         echo "## .agents/hooks.json" >> "$BUNDLE"
         echo '````json' >> "$BUNDLE"
@@ -51,7 +50,7 @@ pack() {
         echo "" >> "$BUNDLE"
     fi
 
-    # 3. Скрипт роутинга (scripts/graph-router.sh)
+    # 3. Router script (scripts/graph-router.sh)
     if [ -f "$HOOKS_DIR/graph-router.sh" ]; then
         echo "## scripts/graph-router.sh" >> "$BUNDLE"
         echo '````bash' >> "$BUNDLE"
@@ -61,11 +60,11 @@ pack() {
         echo "" >> "$BUNDLE"
     fi
 
-    echo "✅ Собрано: $BUNDLE ($(wc -c < "$BUNDLE" | tr -d ' ') байт)"
+    echo "✅ Built: $BUNDLE ($(wc -c < "$BUNDLE" | tr -d ' ') bytes)"
 }
 
 unpack() {
-    [ -f "$BUNDLE" ] || { echo "❌ Файл $BUNDLE не найден. Сначала выполните: $0 pack"; exit 1; }
+    [ -f "$BUNDLE" ] || { echo "❌ File $BUNDLE not found. Run: $0 pack first"; exit 1; }
 
     TARGET="${1:-.}"
     mkdir -p "$TARGET"
@@ -82,7 +81,6 @@ target_dir = sys.argv[2]
 with open(bundle_path, "r", encoding="utf-8") as f:
     text = f.read()
 
-# Извлечение всех секций с целевыми путями: .agents/rules/..., .agents/hooks.json, scripts/...
 pattern = r'(?ms)^##\s+((?:\.agents/|scripts/)[^\r\n]+)\r?\n(?:````|```)[a-z]*\r?\n(.*?)\r?\n(?:````|```)'
 file_blocks = re.findall(pattern, text)
 
@@ -108,13 +106,13 @@ for rel_path, file_content in file_blocks:
         print(f"CREATE: {rel_path}")
         created += 1
 
-print(f"\nСоздано: {created}")
-print(f"Пропущено: {skipped}")
+print(f"\nCreated: {created}")
+print(f"Skipped: {skipped}")
 EOF
 }
 
 case "${1:-}" in
     pack)   pack ;;
     unpack) unpack "${2:-.}" ;;
-    *)      echo "Использование: $0 {pack|unpack [target_dir]}" ;;
+    *)      echo "Usage: $0 {pack|unpack [target_dir]}" ;;
 esac

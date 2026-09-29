@@ -1,61 +1,61 @@
 ---
 trigger: always_on
-description: "Общие архитектурные принципы: лимиты размеров, SRP, изоляция контрактов, константы, импорты"
+description: "Core architectural standards: file and function size limits, single responsibility, clean module boundaries, and constant management"
 ---
 
-# 🏗️ Архитектурные стандарты и декомпозиция
+# 🏗️ Architectural Standards & Decomposition
 
-Настоящие стандарты обязательны для любого типа проектов и языков программирования.
-
----
-
-## 1. Лимиты размеров и модульность
-
-- **Файл > 400 строк** — критический порог и сигнал к декомпозиции на подмодули.
-- **Функция > 50 строк** — подлежит разделению на вспомогательные чистые функции.
-- **Метод класса > 80 строк** — подлежит рефакторингу и выносу логики.
-- **Конструктор (`__init__` / `constructor`) > 30 строк** — обязательный переход на фабричные функции/методы или Builder.
-- **Single Responsibility Principle (SRP):** Один модуль решает одну задачу. Если назначение модуля нельзя описать одним существительным без союза «и» / «and» — модуль требует разделения.
+These standards apply across all projects, frameworks, and programming languages.
 
 ---
 
-## 2. Организация пакетов и импортов
+## 1. Size Thresholds & Modularity
 
-- **Точки входа пакетов (`__init__.py`, `index.js`):**
-  - Предназначены исключительно для публичного реэкспорта (explicit exports).
-  - Запрещено размещать бизнес-логику, тяжелые вычисления и побочные эффекты (side effects).
-  - Запрещены жадные (eager) циклические импорты.
-- **Изоляция общих контрактов:**
-  - Базовые типы, интерфейсы, DTO и утилиты размещаются в выделенных слоях (`contracts/`, `shared/`, `types/`, `lib/`).
-  - Листовые узлы графа зависимостей не должны импортировать вышележащие бизнес-сервисы.
-- **Направление зависимостей:**
-  - Импорты направлены строго сверху вниз по уровням абстракции.
-  - Обратные зависимости запрещены.
-  - Циклические зависимости считаются критической ошибкой проектирования.
-- **Запрет групповых неявных импортов:**
-  - Запрещены конструкции `from module import *` и `import * as X` без строгой необходимости. Все импорты должны быть явными.
+- **File > 400 lines** — Critical threshold requiring decomposition into submodules.
+- **Function > 50 lines** — Must be refactored into smaller, pure helper functions.
+- **Class Method > 80 lines** — Must be decomposed; delegate domain logic to separate services.
+- **Constructor (`__init__` / `constructor`) > 30 lines** — Transition to factory functions or the Builder pattern.
+- **Single Responsibility Principle (SRP):** Each module handles one distinct concern. If a module's purpose cannot be stated in a single noun without the conjunction "and", it must be split.
 
 ---
 
-## 3. Разделение данных и логики
+## 2. Package Organization & Imports
 
-- **Данные отделены от исполняемого кода:**
-  - Статические табличные данные, справочники и структуры конфигураций объемом > 50 строк выносятся в форматы данных (`JSON`, `YAML`, `TOML`, `CSV`).
-  - Переменные окружения и runtime-настройки хранятся в файлах конфигурации, а не хардкодятся в исходном коде.
+- **Package Entry Points (`__init__.py`, `index.js`):**
+  - Reserved exclusively for explicit public re-exports.
+  - Business logic, heavy computations, and side effects are strictly forbidden.
+  - Eager circular imports are forbidden.
+- **Contract & Leaf Node Isolation:**
+  - Base types, schemas, DTOs, interfaces, and utilities reside in dedicated shared layers (`contracts/`, `shared/`, `types/`, `lib/`).
+  - Leaf nodes in the dependency graph must never import higher-level business services.
+- **Dependency Direction:**
+  - Imports must flow strictly downward across abstraction layers.
+  - Upward or reverse dependencies are prohibited.
+  - Circular dependencies are considered design bugs.
+- **No Wildcard Imports:**
+  - `from module import *` and `import * as X` are prohibited. All imports must be explicit.
 
 ---
 
-## 4. Стабильность публичного API
+## 3. Separation of Data and Logic
 
-- Сигнатуры публичных функций, методов и эндпоинтов должны оставаться обратно совместимыми.
-- При необходимости изменения публичного контракта:
-  1. Найти всех потребителей через граф MCP / поиск.
-  2. Разработать переходную сигнатуру (или deprecation layer) либо синхронно обновить всех потребителей в рамках одного атомарного изменения.
+- **Data is separated from executable code:**
+  - Static lookup tables, fixtures, and configs exceeding 50 lines must reside in structured data files (`JSON`, `YAML`, `TOML`, `CSV`).
+  - Runtime settings and environment configurations belong in config files/env vars, never hardcoded in logic modules.
 
 ---
 
-## 5. Управление константами
+## 4. Public API Stability
 
-- Все настраиваемые и бизнес-параметры объявляются в верхней части модуля с поясняющими комментариями.
-- **Запрет магических чисел:** Любые числовые и строковые литералы (кроме тривиальных `0`, `1`, `-1`, `2`, `100%`, `""`) должны быть вынесены в именованные константы.
-- **Единицы измерения в именах:** Все физические, временные и количественные величины обязаны содержать единицу измерения в имени константы (`TIMEOUT_S`, `BUFFER_SIZE_KB`, `DELAY_MS`, `MAX_RETRIES_COUNT`).
+- Signatures of public functions, methods, and endpoints must maintain backward compatibility.
+- When public contracts must change:
+  1. Locate all consumers via graph or search tools.
+  2. Implement deprecation layers or update all callers atomically within a single change.
+
+---
+
+## 5. Constants Management
+
+- All configurable parameters must be declared at the top of the module with explanatory comments.
+- **No Magic Numbers:** Numeric or string literals in logic (except `0`, `1`, `-1`, `2`, `100%`, `""`) must be declared as named constants.
+- **Units in Constant Names:** Time, size, and rate constants must explicitly include units in their names (`TIMEOUT_S`, `BUFFER_SIZE_KB`, `DELAY_MS`, `MAX_RETRIES_COUNT`).

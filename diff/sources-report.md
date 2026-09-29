@@ -1,114 +1,114 @@
-# 📊 Отчёт об источниках правил (Sources Report)
+# 📊 Rules Sources & Mapping Report
 
-В данном документе приведена детальная матрица заимствования и происхождения каждого правила в пакете v1.0.2.
+This document records the lineage, origin, and design rationale for each rule in package v1.0.2.
 
 ---
 
 ## 00-research-protocol.md
-- **База:** Собственный свод архитектурных стандартов и требований к MCP графу знаний.
-- **Взято из `catyyy/everything-antigravity/rules/architect.md`:**
-  - Обобщённый алгоритм обхода графа зависимостей (inbound/outbound/blast radius).
-  - Пороги blast radius (Inbound > 10, Outbound > 5).
-- **Взято из `KeithTorda/gravirules`:**
-  - Протокол деградации в grep (degraded mode) при отсутствии специализированного MCP-сервера.
-- **Написано с нуля:**
-  - Стек-агностичный формат вызовов (без жесткой привязки к единственному вендору).
-  - Стандартизированный шаблон пост-отчёта об изменении кода с проверкой безопасности.
+- **Base:** Universal architectural standards for dependency discovery and MCP knowledge graphs.
+- **Derived from `catyyy/everything-antigravity/rules/architect.md`:**
+  - Generalized dependency graph traversal (`inbound`/`outbound`/`blast radius`).
+  - Blast radius risk thresholds (Inbound > 10, Outbound > 5).
+- **Derived from `KeithTorda/gravirules`:**
+  - Degraded mode fallback to grep when MCP servers are unavailable.
+- **Custom Additions:**
+  - Vendor-agnostic tool signatures.
+  - Standardized post-change report template with security and constant checks.
 
 ---
 
 ## 01-architecture.md
-- **База:** Общие принципы модульности и чистой архитектуры.
-- **Взято из `fjb040911/ai-rules/cli/src/inspect-logic.js`:**
-  - Количественные лимиты: файл ≤ 400 строк, функция ≤ 50 строк, метод ≤ 80 строк.
-- **Взято из `modem-dev/ossrules/AGENTS.md`:**
-  - Правило именования модулей одним существительным (SRP).
-  - Изоляция листовых пакетов в `contracts/` и `shared/`.
-- **Написано с нуля:**
-  - Стандарты именования констант с единицами измерения (`_MS`, `_S`, `_KB`).
+- **Base:** Core modularity and Clean Architecture principles.
+- **Derived from `fjb040911/ai-rules/cli/src/inspect-logic.js`:**
+  - Quantitative size limits: file ≤ 400 lines, function ≤ 50 lines, method ≤ 80 lines.
+- **Derived from `modem-dev/ossrules/AGENTS.md`:**
+  - Single Responsibility Principle (SRP) naming rule.
+  - Leaf contract isolation in `contracts/` and `shared/`.
+- **Custom Additions:**
+  - Standardized constant naming with explicit units (`_MS`, `_S`, `_KB`).
 
 ---
 
 ## 02-no-crutches.md
-- **База:** Реестр категорических запретов, антипаттернов и инвариантов безопасности (Security Invariants).
-- **Взято из `lifedever/claude-rules/base/core.md`:**
-  - Запрет замалчивания `except Exception: pass`, запрет `# type: ignore` без ссылок.
-- **Взято из `awesome-ai-rules`:**
-  - Запрет мутации `window.*` в JS, запрет хардкода крупных структур > 20 строк.
-- **Инварианты безопасности (Security Invariants, v1.0.2):**
-  - Запрет секретов и токенов в коде (только `.env` / Vault).
-  - Запрет сырых SQL-инъекций (только prepared statements).
-  - Запрет динамического `eval()` / `exec()` / `new Function()`.
-  - Запрет XSS (`dangerouslySetInnerHTML`, сырой `innerHTML`).
-  - Запрет `subprocess(..., shell=True)` без строгой санитизации.
-  - Запрет небезопасной десериализации (запрет `pickle` на внешних данных, `yaml.safe_load`).
-  - Запрет уязвимостей Path Traversal (`Path.resolve()` + проверка `is_relative_to`, `Path.name`).
-- **Написано с нуля:**
-  - Формат архитектурного предупреждения и эскалации пользователю.
+- **Base:** Prohibitions registry and Security Invariants.
+- **Derived from `lifedever/claude-rules/base/core.md`:**
+  - Silent exception swallowing ban (`except Exception: pass`), `# type: ignore` justification requirement.
+- **Derived from `awesome-ai-rules`:**
+  - Global `window.*` mutation ban in JS, large data hardcoding ban (> 20 lines).
+- **Security Invariants (v1.0.2):**
+  - Secrets/credentials in source code ban (env/Vault only).
+  - Raw SQL and command string interpolation ban (parameterized only).
+  - Dynamic code evaluation ban (`eval()`, `exec()`, `new Function()`).
+  - XSS ban (`dangerouslySetInnerHTML`, raw `innerHTML`).
+  - Process spawning with `shell=True` ban.
+  - Unsafe deserialization ban (`pickle.load()`, unsafe `yaml.load()`).
+  - Path traversal vulnerability ban (`Path.resolve().is_relative_to()`, `Path.name`).
+- **Custom Additions:**
+  - Structured architectural escalation template.
 
 ---
 
 ## 03-python.md
-- **База:** Python 3.11+ Best Practices.
-- **Взято из `Lay4U/awesome-ai-rules/rules/cursor/python/`:**
-  - `from __future__ import annotations`, встроенные дженерики `list[str]`, оператор `|`.
-  - Валидация границ через Pydantic.
-- **Взято из `lifedever/claude-rules/languages/python.md`:**
-  - Контракты через `typing.Protocol`.
-  - Модульное логирование через `logging.getLogger(__name__)`.
-- **Написано с нуля:**
-  - Строгие константы через `typing.Final`.
-  - Явное требование `logger.exception()` для непредвиденных исключений и `yaml.safe_load()`.
+- **Base:** Python 3.11+ Best Practices.
+- **Derived from `Lay4U/awesome-ai-rules/rules/cursor/python/`:**
+  - `from __future__ import annotations`, built-in generics `list[str]`, union operator `|`.
+  - Boundary validation via Pydantic.
+- **Derived from `lifedever/claude-rules/languages/python.md`:**
+  - Structural subtyping via `typing.Protocol`.
+  - Module logging via `logging.getLogger(__name__)`.
+- **Custom Additions:**
+  - Strict immutability with `typing.Final`.
+  - Mandatory `logger.exception()` for unexpected exceptions and safe YAML parsing.
 
 ---
 
 ## 04-javascript.md
-- **База:** Современный стандарт ES6+ модулей.
-- **Взято из `lifedever/claude-rules/languages/javascript.md`:**
-  - Запрет `var`, предпочтение `const`, строгое равенство `===`.
-- **Взято из `awesome-ai-rules`:**
-  - Защита конфигов через `Object.freeze()`.
-- **Написано с нуля:**
-  - Безопасная шаблонизация через HTML `<template>` вместо небезопасного `innerHTML`.
-  - Запрет тяжелых обработчиков событий (`handle*` > 80 строк).
+- **Base:** Modern ES6+ module standards.
+- **Derived from `lifedever/claude-rules/languages/javascript.md`:**
+  - Ban `var`, prefer `const`, strict equality `===`.
+- **Derived from `awesome-ai-rules`:**
+  - Configuration dictionary protection via `Object.freeze()`.
+- **Custom Additions:**
+  - Safe templating via HTML `<template>` instead of `innerHTML`.
+  - Handler complexity limit (`handle*` ≤ 80 lines).
 
 ---
 
 ## 05-html.md
-- **База:** Спецификация HTML5 и W3C A11y.
-- **Взято из `lifedever/claude-rules/languages/html.md`:**
-  - Семантические контейнеры (`<header>`, `<main>`, `<footer>`), `aria-label` для иконок.
-- **Написано с нуля:**
-  - Строгое разграничение `id` (JS/Hooks) vs `class` (CSS) vs `data-*` (Data payload).
-  - Запрет тегов `<br>` для вертикального выравнивания.
+- **Base:** HTML5 Specification and W3C A11y.
+- **Derived from `lifedever/claude-rules/languages/html.md`:**
+  - Semantic container elements (`<header>`, `<main>`, `<footer>`), `aria-label` for icon buttons.
+- **Custom Additions:**
+  - Strict separation of `id` (JS/Hooks) vs `class` (CSS) vs `data-*` (Data state).
+  - Ban `<br>` tags for spacing.
 
 ---
 
 ## 06-css.md
-- **База:** Написано с нуля (в готовых AI-репозиториях практически нет выделенных правил чистого CSS).
-- **Сформулированные принципы:**
-  - Обязательные дизайн-токены в `:root`.
-  - Единицы `rem` для отступов/шрифтов и `px` для границ.
-  - Лимит вложенности селекторов ≤ 3.
-  - Запрет `!important` кроме внешних переопределений.
-  - Модульность при объёме > 1000 строк и использование `@layer`.
+- **Base:** Synthesized from modern CSS3 engineering practices.
+- **Core Principles:**
+  - Mandatory design tokens in `:root`.
+  - `rem` for spacing/typography and `px` for thin borders.
+  - Max selector nesting depth ≤ 3.
+  - Ban `!important` except for third-party library overrides.
+  - Modularity for stylesheets > 1000 lines and `@layer` cascading.
 
 ---
 
 ## 07-tests.md
-- **База:** AAA (Arrange-Act-Assert) и TDD.
-- **Взято из `sfc-gh-myoung/ai_coding_rules`:**
-  - Структура тестов AAA, параметризация через `@pytest.mark.parametrize` / `test.each`.
-- **Написано с нуля:**
-  - Исчерпывающая 5-элементная матрица граничных условий (`Happy Path`, `Min`, `Max`, `Invalid`, `None/Null`).
-  - Протокол Bugfix First (падающий тест до фикса).
+- **Base:** AAA (Arrange-Act-Assert) and TDD.
+- **Derived from `sfc-gh-myoung/ai_coding_rules`:**
+  - AAA test partitioning, parameterized test suites.
+- **Custom Additions:**
+  - 5-point boundary coverage matrix (`Happy Path`, `Min`, `Max`, `Invalid`, `Null/None`).
+  - Bugfix-first protocol.
 
 ---
 
 ## 08-commits.md
-- **База:** Спецификация Conventional Commits v1.0.0.
-- **Взято из `Lay4U/awesome-ai-rules`:**
-  - Типы коммитов (`feat`, `fix`, `refactor`, `test`, `chore`, `perf`).
-- **Написано с нуля:**
-  - Фокус описания на «Почему/Зачем», а не «Что».
-  - Четкий список запрещенных к коммиту мусорных и временных файлов (`scratch/`, `.env`, `.pycache`).
+- **Base:** Conventional Commits Specification v1.0.0.
+- **Derived from `Lay4U/awesome-ai-rules`:**
+  - Commit types (`feat`, `fix`, `refactor`, `test`, `chore`, `perf`).
+- **Custom Additions:**
+  - Commit body focus on "WHY" rather than "WHAT".
+  - Explicit list of prohibited junk and secret files.

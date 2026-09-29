@@ -1,61 +1,61 @@
 ---
 trigger: glob
 globs: "*.py, *.pyi"
-description: "Стандарты разработки на Python 3.11+: строгая типизация, Pydantic, логирование, исключения, константы"
+description: "Python 3.11+ development standards: strict type annotations, Pydantic, structured logging, safe exceptions, and constant immutability"
 ---
 
-# 🐍 Стандарты разработки на Python (3.11+)
+# 🐍 Python Standards (3.11+)
 
 ---
 
-## 1. Типизация и сигнатуры
+## 1. Typing & Signatures
 
-- **Обязательная типизация:** Все аргументы функций, методов и возвращаемые значения должны иметь строгие аннотации типов.
-- **Отложенная оценка аннотаций:** Всегда включайте в начало каждого файла:
+- **Mandatory Typing:** All function/method arguments and return values must be explicitly type-annotated.
+- **Postponed Evaluation:** Always place at the very top of each file:
   ```python
   from __future__ import annotations
   ```
-- **Современный синтаксис:** Используйте встроенные дженерики (`list[str]`, `dict[str, int]`, `tuple[int, ...]`) и оператор объединения типов `X | Y` вместо `Optional[X]` и `Union[X, Y]`.
-- **Протоколы и контракты:** Для duck-typing и описания интерфейсов используйте `typing.Protocol` вместо наследования от тяжелых базовых классов.
+- **Modern Syntax:** Use built-in generics (`list[str]`, `dict[str, int]`, `tuple[int, ...]`) and union operators `X | Y` instead of `Optional[X]` and `Union[X, Y]`.
+- **Protocols & Interfaces:** For structural subtyping (duck-typing), use `typing.Protocol` instead of inheritance from heavy abstract base classes.
 
 ---
 
-## 2. Валидация данных и границы системы
+## 2. Data Validation & System Boundaries
 
-- **Декларативные схемы:** На границах ввода-вывода (API, CLI-аргументы, чтение конфигураций, парсинг файлов) используйте Pydantic модели (`BaseModel`, `Field`) или `msgspec`.
-- **Запрет ручной валидации:** Избегайте каскадных конструкций `if not isinstance(val, int): raise ValueError()`. Валидация и приведение типов должны выполняться парсером схемы.
-- **Безопасная десериализация:** Для конфигов и данных используйте `yaml.safe_load()` или `json.loads()`. Запрещено использование `pickle` на данных из внешних источников.
+- **Declarative Schemas:** At I/O boundaries (APIs, CLI arguments, config parsing, file reading), validate payloads using Pydantic models (`BaseModel`, `Field`) or `msgspec`.
+- **No Manual Type Checks:** Avoid cascading `if not isinstance(val, int): raise ValueError()`. Parsing and conversion should be handled declaratively.
+- **Safe Deserialization:** Use `yaml.safe_load()` or `json.loads()`. Never use `pickle` on untrusted input.
 
 ---
 
-## 3. Логирование и диагностика
+## 3. Logging & Diagnostics
 
-- **Модульные логгеры:**
+- **Module-Level Loggers:**
   ```python
   import logging
   logger = logging.getLogger(__name__)
   ```
-- **Запрет `print()`:** Функция `print()` запрещена в продакшен-коде (допустима только в одноразовых scratch-скриптах и CLI-утилитах вывода для пользователя).
-- **Контекст логирования:** Логируйте структурированные сообщения и передавайте контекст через `extra` или параметры форматирования:
+- **No `print()` Calls:** `print()` is forbidden in production code (allowed only in transient scratch scripts and CLI output formatters).
+- **Structured Context:** Pass structured parameters via `extra` or logging formatters:
   ```python
-  logger.info("Обработка запроса начата", extra={"request_id": req_id})
+  logger.info("Processing request started", extra={"request_id": req_id})
   ```
 
 ---
 
-## 4. Обработка исключений
+## 4. Exception Handling
 
-- **Специфичные исключения:** Перехватывайте только ожидаемые типы исключений (`KeyError`, `ValueError`, `FileNotFoundError`).
-- **Запрет глушения:** Конструкция `except Exception: pass` категорически запрещена.
-- **Сохранение контекста:** При повторном выбросе используйте цепочки исключений: `raise CustomDomainError("детали") from err`.
-- **Логирование трейсбека:** При перехвате непредвиденных ошибок обязательно используйте `logger.exception("Непредвиденная ошибка при обработке: %s", err)`.
+- **Specific Exceptions:** Catch only expected exception types (`KeyError`, `ValueError`, `FileNotFoundError`).
+- **No Swallowing:** `except Exception: pass` is strictly prohibited.
+- **Exception Chaining:** When re-raising or wrapping, preserve causality: `raise CustomDomainError("details") from err`.
+- **Traceback Logging:** For unexpected errors, always use `logger.exception("Unexpected error occurred: %s", err)`.
 
 ---
 
-## 5. Аргументы по умолчанию и мутабельность
+## 5. Default Arguments & Mutability
 
-- **Запрет мутабельных дефолтов:** Конструкции вида `def process(items: list = [])` запрещены.
-- **Идиома `None`:**
+- **No Mutable Defaults:** `def process(items: list = [])` is strictly forbidden.
+- **Idiomatic `None` Initialization:**
   ```python
   def process(items: list[str] | None = None) -> None:
       target_items = items if items is not None else []
@@ -63,15 +63,15 @@ description: "Стандарты разработки на Python 3.11+: стр�
 
 ---
 
-## 6. Константы и форматирование
+## 6. Constants & Formatting
 
-- **Неизменяемые константы:**
+- **Immutable Constants:**
   ```python
   from typing import Final
 
   DEFAULT_TIMEOUT_S: Final[float] = 30.0
   MAX_RETRY_ATTEMPTS: Final[int] = 3
   ```
-- **Строки:** Используйте f-строки (`f"Result: {value}"`). Форматирование через `%` и `.format()` запрещено.
-- **Импорты:** Используйте абсолютные импорты (`from app.services import core`) вместо глубоких относительных путей (`from ...services import core`).
-- **Стиль:** Соответствие правилам `ruff` / `black` / `isort`.
+- **F-Strings:** Use f-strings (`f"Result: {value}"`). `%` and `.format()` formatting are forbidden.
+- **Absolute Imports:** Use absolute package imports (`from app.services import core`) rather than deep relative imports (`from ...services import core`).
+- **Code Style:** Comply with `ruff` / `black` / `isort` configurations.
