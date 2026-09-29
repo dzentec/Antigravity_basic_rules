@@ -1,6 +1,6 @@
 # 📊 Rules Sources & Mapping Report
 
-This document records the lineage, origin, and design rationale for each rule in package v1.0.2.
+This document records the lineage, origin, and design rationale for each rule in package v1.1.0.
 
 ---
 
@@ -112,3 +112,22 @@ This document records the lineage, origin, and design rationale for each rule in
 - **Custom Additions:**
   - Commit body focus on "WHY" rather than "WHAT".
   - Explicit list of prohibited junk and secret files.
+
+---
+
+## 09-api.md
+- **Base:** REST / HTTP API architecture and RFC specifications (RFC 5789, RFC 7231, RFC 7234, RFC 9110).
+- **Derived from `awesome-ai-rules` & `api-and-interface-design` skill:**
+  - Standard resource URI naming (nouns, plural, kebab-case, max 3 nesting levels).
+  - Explicit HTTP method and idempotency semantics.
+  - DTO separation (Create, Update, Response) without data leakage.
+  - Standardized JSON error response envelope with machine-readable codes and correlation IDs.
+  - Pagination envelopes (Offset & Cursor) with mandatory server-enforced hard caps.
+- **Security & Observability Additions (v1.1.0):**
+  - Explicit 401 Unauthorized vs 403 Forbidden separation.
+  - Idempotency-Key support for non-idempotent mutations (`POST`).
+  - Conditional caching via `ETag` and `If-None-Match`.
+  - Rate limiting standard headers and `Retry-After` on 429.
+  - Strict CORS policy (no wildcard with credentials).
+  - OpenAPI 3.x schema-first alignment with runtime DTO models.
+  - Database access optimization and N+1 query prevention.

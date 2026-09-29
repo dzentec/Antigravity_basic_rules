@@ -1,0 +1,239 @@
+diff --git a/.agents/rules/09-api.md b/.agents/rules/09-api.md
+new file mode 100644
+index 0000000..5594ba3
+--- /dev/null
++++ b/.agents/rules/09-api.md
+@@ -0,0 +1,233 @@
++---
++trigger: glob
++globs: "*api*, *route*, *controller*, *endpoint*, *router*, *handler*, *serializer*, *dto*, *schema*"
++description: "REST & HTTP API design standards: resource naming, HTTP methods, status codes, DTO separation, error envelopes, pagination, versioning, auth, idempotency, caching, and observability"
++---
++
++# 🌐 API Design & REST Architecture Standards
++
++These standards govern public and internal HTTP/REST API endpoints, routing architecture, DTO schemas, authentication contracts, and observability conventions across all backend frameworks.
++
++---
++
++## 1. Resource URI Naming Conventions
++
++- **Nouns, Not Verbs:** URIs represent resources, not actions.
++  - ✅ `GET /api/v1/users`
++  - ❌ `GET /api/v1/getUsers` or `POST /api/v1/deleteUser`
++- **Plural Form:** Always use plural nouns for collection endpoints (`/users`, `/organizations`, `/invoices`).
++- **Kebab-Case:** Lowercase, hyphen-separated multi-word resource names:
++  - ✅ `/api/v1/user-profiles`
++  - ❌ `/api/v1/userProfiles`, `/api/v1/user_profiles`
++- **Nesting Depth Limit (Max 3 Levels):**
++  - ✅ `/api/v1/teams/{team_id}/members` (depth 2)
++  - ❌ `/api/v1/organizations/{org_id}/teams/{team_id}/projects/{proj_id}/tasks`
++  - Flatten deep hierarchies: `/api/v1/projects/{proj_id}/tasks`.
++- **Filtering & Search in Query Parameters:** Never encode filters into path segments.
++  - ✅ `GET /api/v1/products?category=electronics&status=active`
++  - ❌ `GET /api/v1/products/category/electronics/active`
++
++---
++
++## 2. HTTP Methods & Idempotency Matrix
++
++| Method | Purpose | Idempotent | Safe | Request Body |
++|---|---|---|---|---|
++| **`GET`** | Read single resource or collection | ✅ | ✅ | ❌ Forbidden |
++| **`POST`** | Create resource / invoke RPC action | ❌ | ❌ | ✅ Required |
++| **`PUT`** | Complete replacement of a resource | ✅ | ❌ | ✅ Required |
++| **`PATCH`** | Partial update (⚠️ depends on patch format — JSON Merge Patch is idempotent, JSON Patch is not) | ⚠️ | ❌ | ✅ Required |
++| **`DELETE`** | Remove a resource | ✅ | ❌ | ❌ None |
++| **`HEAD`** | Headers only (metadata / existence) | ✅ | ✅ | ❌ Forbidden |
++
++- **No `GET` with side effects.** State mutation over `GET` is forbidden.
++- **No method tunneling.** `X-HTTP-Method-Override` and similar hacks are forbidden.
++
++---
++
++## 3. HTTP Status Codes Standards
++
++### 3.1. Success (2xx)
++- **`200 OK`** — Standard success for `GET`, `PATCH`, `PUT`.
++- **`201 Created`** — Successful `POST` that creates a resource. MUST include a `Location` header.
++- **`202 Accepted`** — Long-running async task initiated; returns task ID / status URL.
++- **`204 No Content`** — Success with no body (typically `DELETE` or action triggers).
++
++### 3.2. Client Errors (4xx)
++- **`400 Bad Request`** — Malformed syntax, unparseable payload.
++- **`401 Unauthorized`** — Missing / expired / invalid authentication credentials.
++- **`403 Forbidden`** — Authenticated but not permitted.
++- **`404 Not Found`** — Target resource does not exist.
++- **`409 Conflict`** — State conflict (unique constraint, concurrent update, idempotency-key reuse with different body).
++- **`422 Unprocessable Entity`** — Valid syntax, failed business validation (Pydantic / schema error).
++- **`429 Too Many Requests`** — Rate limit exceeded. MUST include `Retry-After`.
++
++### 3.3. Server Errors (5xx)
++- **`500 Internal Server Error`** — Unexpected runtime error. Never expose stack traces in production.
++- **`502 Bad Gateway` / `503 Service Unavailable`** — Upstream failure or maintenance.
++
++---
++
++## 4. Request & Response DTO Separation
++
++- **Never Reuse Models.** Declare distinct schemas per operation:
++
++  ```python
++  class UserCreate(BaseModel):
++      email: EmailStr
++      password: str = Field(..., min_length=8)
++      full_name: str
++
++  class UserUpdate(BaseModel):
++      email: EmailStr | None = None
++      full_name: str | None = None
++
++  class UserResponse(BaseModel):
++      id: str
++      email: EmailStr
++      full_name: str
++      created_at: datetime
++      # password is NOT present
++  ```
++
++- **No Server-Generated Fields in Input.** Clients must not supply `id`, `created_at`, `hashed_password`, etc.
++- **Validation at Boundaries.** All DTOs MUST be validated via declarative schemas — see `03-python.md` §2.
++
++---
++
++## 5. Standardized Error Response Envelope
++
++All API errors follow a single JSON shape:
++
++```json
++{
++  "error": {
++    "code": "VALIDATION_ERROR",
++    "message": "The provided input payload is invalid.",
++    "request_id": "req_01h7x89q2m...",
++    "details": [
++      { "field": "email", "issue": "Invalid email address format." }
++    ]
++  }
++}
++```
++
++- **`code`** — Machine-readable uppercase identifier for client routing.
++- **`message`** — Human-readable explanation, safe to surface.
++- **`request_id`** — Correlation ID matched against server logs.
++- **`details`** — Optional array of field-level errors.
++- **Leakage Rule:** The envelope MUST NOT echo internal stack traces, SQL errors, or upstream provider messages verbatim.
++
++---
++
++## 6. Pagination, Filtering, and Sorting
++
++### 6.1. Pagination Envelope
++
++```json
++{
++  "items": [ ... ],
++  "pagination": {
++    "page": 1,
++    "page_size": 20,
++    "total_items": 142,
++    "total_pages": 8,
++    "has_next": true
++  }
++}
++```
++
++- **Offset Pagination** (`page` + `page_size`) — jumpable datasets, low write frequency.
++- **Cursor Pagination** (`cursor` + `limit`) — high-velocity streams (events, feeds).
++- **Hard Cap:** `page_size` MUST have a server-enforced maximum (e.g., 100). Unbounded queries are forbidden.
++
++### 6.2. Sorting
++Standardized URL query params: `sort=created_at:desc` or `sort=-created_at`. Whitelist sortable fields — never pass user input directly into `ORDER BY` (see `02-no-crutches.md` §13).
++
++---
++
++## 7. Versioning & Evolution
++
++- **URL Path Versioning:** Prefix all endpoints with the major version (`/api/v1/...`).
++- **Backward Compatibility Invariant:** Never remove fields or change field types within a major version. New major versions (`/api/v2/`) only for breaking structural changes.
++- **Deprecation Headers:**
++  - `Deprecation: @1735689600` (Unix timestamp)
++  - `Sunset: Wed, 11 Nov 2026 00:00:00 GMT`
++  - `Link: <https://api.example.com/docs/v2-migration>; rel="sunset"`
++
++---
++
++## 8. Asynchronous Route Handler Safety
++
++- **Non-Blocking I/O:** `async def` handlers MUST NOT execute synchronous blocking operations (`requests.get()`, `time.sleep()`, sync DB drivers). Use `httpx.AsyncClient` and async ORM drivers.
++- **Dependency Injection:** DB sessions, external clients, and auth contexts are managed via DI (`Depends(get_db)`) with strict cleanup on error paths (`try/finally`, `async with`).
++- **No Blocking CPU Work:** Heavy computation belongs in a worker pool, not the event loop.
++
++---
++
++## 9. Authentication & Authorization
++
++- **Token Transport:** Bearer tokens ONLY via `Authorization: Bearer <token>` over HTTPS. Tokens in query strings, URL fragments, or non-`HttpOnly` cookies are forbidden.
++- **401 vs 403:** Never conflate — `401` = missing/invalid credentials; `403` = authenticated but unauthorized.
++- **Boundary Enforcement:** Authorization is enforced at route boundaries (middleware / DI dependency), never delegated to client or buried in business logic.
++- **No Custom Crypto:** Never implement custom encryption, token signing, or password hashing. Use vetted libraries (`PyJWT`, `python-jose`, `passlib`, `bcrypt`).
++- **Cross-Reference:** Secret handling follows `02-no-crutches.md` §12.
++
++---
++
++## 10. Idempotency for Non-Idempotent Operations
++
++- **`Idempotency-Key` Header:** Clients MAY send `Idempotency-Key: <uuid>` on `POST`. The server MUST persist the key + response for a bounded TTL (e.g., 24h) and replay the cached response on duplicate keys.
++- **Required Scope:** Payments, order creation, and any operation with external side effects.
++- **Conflict Response:** Reusing a key with a *different* request body MUST return `409 Conflict`.
++
++---
++
++## 11. Caching & Conditional Requests
++
++- **`ETag` on GET:** Single-resource `GET` responses SHOULD carry a strong `ETag`.
++- **Conditional GET:** Honor `If-None-Match`; return `304 Not Modified` on match.
++- **Sensitive Responses:** Authenticated user data MUST set `Cache-Control: private, no-store`.
++- **Public Static:** `Cache-Control: public, max-age=..., immutable` for content-hashed assets.
++
++---
++
++## 12. Rate Limiting & Throttling
++
++- **Standard Headers:** Return `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` on every response.
++- **`429` Response:** MUST include `Retry-After` (seconds or HTTP date).
++- **Scoping:** Enforce per authenticated principal for authenticated routes; per-IP only for anonymous traffic.
++
++---
++
++## 13. CORS Policy
++
++- **No Wildcard + Credentials:** `Access-Control-Allow-Origin: *` MUST NOT be combined with `Access-Control-Allow-Credentials: true`.
++- **Explicit Allow-List:** Allowed origins live in configuration (env / config file), never hardcoded inline.
++- **Preflight:** `OPTIONS` handlers return proper `Access-Control-Allow-Methods` / `-Headers`; cache via `Access-Control-Max-Age`.
++
++---
++
++## 14. Request Tracing & Observability
++
++- **Request ID Propagation:** Every inbound request receives a `request_id` (from `X-Request-ID` or generated). Propagated downstream; echoed in error envelope (§5).
++- **Structured Logging:** Emit structured fields (see `03-python.md` §3): `request_id`, `route`, `method`, `status`, `latency_ms`, `user_id`.
++- **Never Log:** Authorization headers, cookies, PII, passwords, full card numbers.
++- **Latency Budgets:** Track p50/p95/p99 per route; regressions are treated as bugs.
++
++---
++
++## 15. API Documentation (OpenAPI)
++
++- **Schema-First:** OpenAPI 3.x is generated from the same DTO models used at runtime (Pydantic → OpenAPI, Zod → OpenAPI). Handwritten specs that drift are forbidden.
++- **Coverage:** Every endpoint declares a summary, request DTO, success response, and all applicable error responses.
++- **Deprecation:** Deprecated routes flagged in spec (`deprecated: true`) and cross-referenced with headers (§7).
++
++---
++
++## 16. Data Access Patterns (N+1 Prevention)
++
++- **No Per-Item Queries in Loops:** Fetching related records inside a loop is forbidden. Use eager loading (`joinedload`, `selectinload`), batch fetching, or `IN (...)`.
++- **Bounded Result Sets:** All collection endpoints MUST be paginated (§6). No unbounded `SELECT *`.
++- **Streaming:** Large exports (CSV, binary) stream via chunked responses — never buffer fully in memory.
++- **Cross-Reference:** Module decomposition rules — `01-architecture.md` §1.

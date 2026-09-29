@@ -1,4 +1,4 @@
-# 📦 Universal Antigravity Rules Package (v1.0.2)
+# 📦 Universal Antigravity Rules Package (v1.1.0)
 
 A portable, domain-agnostic, and token-efficient set of development rules for the **Antigravity AI Agent** in **Python**, **JavaScript**, **HTML5**, and **CSS3** projects.
 
@@ -6,7 +6,7 @@ A portable, domain-agnostic, and token-efficient set of development rules for th
 
 ## 📁 Package Contents
 
-- **`rules/`** — 9 modular rule files with YAML frontmatter triggers (`always_on`, `glob`, `model_decision`).
+- **`rules/`** — 10 modular rule files with YAML frontmatter triggers (`always_on`, `glob`, `model_decision`).
 - **`hooks/`** — `graph-router.sh` hook script for routing search requests to MCP knowledge graphs.
 - **`diff/`** — Unified diff patches (`install.patch`, `uninstall.patch`, modular sub-patches) for Git-based deployment.
 - **`pack/`** — `rules-bundle.md`: A single flat Markdown file containing all rules and hooks.
@@ -76,7 +76,8 @@ After installation or unpacking, the following structure is placed in the target
 │   │   ├── 05-html.md                 # [glob *.html] HTML5 semantics, a11y, id vs class
 │   │   ├── 06-css.md                  # [glob *.css] Design tokens in :root, selector limits
 │   │   ├── 07-tests.md                # [glob test_*] AAA pattern, 5-point boundary coverage
-│   │   └── 08-commits.md              # [model_decision] Conventional Commits & hygiene
+│   │   ├── 08-commits.md              # [model_decision] Conventional Commits & hygiene
+│   │   └── 09-api.md                  # [glob *api*..*schema*] REST & HTTP API architecture standards
 │   └── hooks.json                     # PreToolUse router hook
 └── scripts/
     └── graph-router.sh                # Executable MCP graph routing script
@@ -91,4 +92,4 @@ After installation or unpacking, the following structure is placed in the target
    /memory show
    ```
 2. Verify that the rules are loaded into the active agent context.
-3. Confirm that all 9 `.md` files exist under `.agents/rules/` and `hooks.json` is located under `.agents/`.
+3. Confirm that all 10 `.md` files exist under `.agents/rules/` and `hooks.json` is located under `.agents/`.

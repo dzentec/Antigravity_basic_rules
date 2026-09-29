@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-09-30
+
+### Added
+- **`09-api.md`:** Comprehensive REST and HTTP API design standards covering:
+  - Resource URI naming conventions (kebab-case, nouns, max 3 nesting levels).
+  - HTTP method & idempotency matrix (including merge-patch vs JSON patch handling).
+  - HTTP status codes (2xx, 4xx, 5xx) with explicit `Location` and `Retry-After` headers.
+  - Strict Request & Response DTO separation without server-generated field leakage.
+  - Standardized error response envelope (`code`, `message`, `request_id`, `details`).
+  - Pagination (Offset & Cursor) with server-enforced hard caps.
+  - URL path versioning and RFC deprecation headers.
+  - Async route handler safety, dependency injection, and worker offloading.
+  - Authentication / Authorization boundary enforcement (401 vs 403, Bearer over HTTPS).
+  - `Idempotency-Key` header handling and 409 conflict semantics for mutations.
+  - Caching & conditional requests (`ETag`, `If-None-Match`, `Cache-Control`).
+  - Rate limiting standard headers and 429 throttling mechanics.
+  - Strict CORS policy (no wildcard + credentials, explicit origin allowlist).
+  - Request tracing & observability (`X-Request-ID`, structured logging, latency budgets).
+  - OpenAPI 3.x schema-first generation from runtime DTO models.
+  - Data access patterns & N+1 query prevention.
+
+---
+
 ## [1.0.2] - 2026-09-29
 
 ### Added
