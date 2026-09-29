@@ -1,0 +1,53 @@
+diff --git a/.agents/hooks/hooks.json b/.agents/hooks/hooks.json
+new file mode 100644
+index 0000000..a4e9964
+--- /dev/null
++++ b/.agents/hooks/hooks.json
+@@ -0,0 +1,16 @@
++{
++  "graph-router": {
++    "PreToolUse": [
++      {
++        "matcher": "grep|glob",
++        "hooks": [
++          {
++            "type": "command",
++            "command": "./scripts/graph-router.sh",
++            "timeout": 5
++          }
++        ]
++      }
++    ]
++  }
++}
+diff --git a/scripts/graph-router.sh b/scripts/graph-router.sh
+new file mode 100644
+index 0000000..8b99bcd
+--- /dev/null
++++ b/scripts/graph-router.sh
+@@ -0,0 +1,25 @@
++#!/usr/bin/env bash
++# ==============================================================================
++# graph-router.sh: Hook script for routing search requests to MCP Graph Knowledge
++# Protojson format: camelCase {"decision": "allow"}
++# ==============================================================================
++
++set -euo pipefail
++
++LOG_DIR="validation"
++if [ ! -d "$LOG_DIR" ]; then
++  mkdir -p "$LOG_DIR" 2>/dev/null || true
++fi
++LOG_FILE="$LOG_DIR/graph-router.log"
++
++# Read input payload from stdin if available
++INPUT_PAYLOAD=$(cat || echo "{}")
++TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)
++
++# Log event for diagnostic tracking
++echo "[$TIMESTAMP] PreToolUse triggered for grep/glob. Payload length: ${#INPUT_PAYLOAD}" >> "$LOG_FILE" 2>/dev/null || true
++
++# Return protojson response in camelCase format required by Antigravity v2.18+
++cat <<EOF
++{"decision": "allow"}
++EOF
