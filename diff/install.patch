@@ -1,3 +1,25 @@
+diff --git a/.agents/hooks.json b/.agents/hooks.json
+new file mode 100644
+index 0000000..a4e9964
+--- /dev/null
++++ b/.agents/hooks.json
+@@ -0,0 +1,16 @@
++{
++  "graph-router": {
++    "PreToolUse": [
++      {
++        "matcher": "grep|glob",
++        "hooks": [
++          {
++            "type": "command",
++            "command": "./scripts/graph-router.sh",
++            "timeout": 5
++          }
++        ]
++      }
++    ]
++  }
++}
 diff --git a/.agents/rules/00-research-protocol.md b/.agents/rules/00-research-protocol.md
 new file mode 100644
 index 0000000..074afbc

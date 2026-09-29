@@ -41,7 +41,17 @@ pack() {
         echo "" >> "$BUNDLE"
     done
 
-    # 2. Скрипт роутинга (scripts/graph-router.sh)
+    # 2. Хуки (.agents/hooks.json напрямую в .agents/)
+    if [ -f "$HOOKS_DIR/hooks.json" ]; then
+        echo "## .agents/hooks.json" >> "$BUNDLE"
+        echo '````json' >> "$BUNDLE"
+        cat "$HOOKS_DIR/hooks.json" >> "$BUNDLE"
+        echo "" >> "$BUNDLE"
+        echo '````' >> "$BUNDLE"
+        echo "" >> "$BUNDLE"
+    fi
+
+    # 3. Скрипт роутинга (scripts/graph-router.sh)
     if [ -f "$HOOKS_DIR/graph-router.sh" ]; then
         echo "## scripts/graph-router.sh" >> "$BUNDLE"
         echo '````bash' >> "$BUNDLE"
@@ -72,8 +82,8 @@ target_dir = sys.argv[2]
 with open(bundle_path, "r", encoding="utf-8") as f:
     text = f.read()
 
-# Извлечение всех блоков: ## <path> + тело кодового блока
-pattern = r'(?ms)^##\s+((?:\.agents|scripts)/[^\r\n]+)\r?\n(?:````|```)[a-z]*\r?\n(.*?)\r?\n(?:````|```)'
+# Извлечение всех секций с целевыми путями: .agents/rules/..., .agents/hooks.json, scripts/...
+pattern = r'(?ms)^##\s+((?:\.agents/|scripts/)[^\r\n]+)\r?\n(?:````|```)[a-z]*\r?\n(.*?)\r?\n(?:````|```)'
 file_blocks = re.findall(pattern, text)
 
 created = 0

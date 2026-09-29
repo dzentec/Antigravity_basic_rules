@@ -35,7 +35,7 @@ if ($Action -eq "pack") {
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.AppendLine("# Rules Bundle`n")
     
-    # 1. Rules
+    # 1. Rules (.agents/rules/)
     $rules = Get-ChildItem -Path $rulesDir -Filter "0*.md" | Sort-Object Name
     foreach ($r in $rules) {
         [void]$sb.AppendLine("## .agents/rules/$($r.Name)")
@@ -46,7 +46,17 @@ if ($Action -eq "pack") {
         [void]$sb.AppendLine("")
     }
     
-    # 2. Graph router script
+    # 2. Hooks (.agents/hooks.json)
+    $hJson = Join-Path $hooksDir "hooks.json"
+    if (Test-Path $hJson) {
+        [void]$sb.AppendLine("## .agents/hooks.json")
+        [void]$sb.AppendLine('````json')
+        [void]$sb.AppendLine((Get-Content -Path $hJson -Raw -Encoding utf8).Trim())
+        [void]$sb.AppendLine('````')
+        [void]$sb.AppendLine("")
+    }
+    
+    # 3. Graph router script (scripts/graph-router.sh)
     $gRouter = Join-Path $hooksDir "graph-router.sh"
     if (Test-Path $gRouter) {
         [void]$sb.AppendLine("## scripts/graph-router.sh")
@@ -76,7 +86,7 @@ elseif ($Action -eq "unpack") {
     
     $text = [System.IO.File]::ReadAllText($bundle, [System.Text.Encoding]::UTF8)
     
-    $pattern = '(?ms)^##\s+((?:\.agents|scripts)/[^\r\n]+)\r?\n(?:````|```)[a-z]*\r?\n(.*?)\r?\n(?:````|```)'
+    $pattern = '(?ms)^##\s+((?:\.agents/|scripts/)[^\r\n]+)\r?\n(?:````|```)[a-z]*\r?\n(.*?)\r?\n(?:````|```)'
     $matches = [System.Text.RegularExpressions.Regex]::Matches($text, $pattern)
     
     $created = 0

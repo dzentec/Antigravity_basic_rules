@@ -1,0 +1,16 @@
+{
+  "graph-router": {
+    "PreToolUse": [
+      {
+        "matcher": "grep|glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/graph-router.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

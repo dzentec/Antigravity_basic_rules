@@ -46,6 +46,7 @@ case "$MODE" in
     echo "=== ПРЯМОЕ КОПИРОВАНИЕ ==="
     mkdir -p "$TARGET/.agents/rules" "$TARGET/scripts"
     cp "$SCRIPT_DIR/rules/"*.md "$TARGET/.agents/rules/"
+    cp "$SCRIPT_DIR/hooks/hooks.json" "$TARGET/.agents/hooks.json" 2>/dev/null || true
     cp "$SCRIPT_DIR/hooks/graph-router.sh" "$TARGET/scripts/" 2>/dev/null || true
     chmod +x "$TARGET/scripts/graph-router.sh" 2>/dev/null || true
     echo "✅ Файлы правил успешно скопированы в $TARGET"

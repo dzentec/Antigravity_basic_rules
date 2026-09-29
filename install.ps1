@@ -57,6 +57,7 @@ switch ($Mode) {
         
         New-Item -ItemType Directory -Force -Path $rulesDst, $scriptsDst | Out-Null
         Copy-Item (Join-Path $scriptDir "rules\*.md") $rulesDst -Force
+        Copy-Item (Join-Path $scriptDir "hooks\hooks.json") (Join-Path $resolvedTarget ".agents\hooks.json") -Force -ErrorAction SilentlyContinue
         Copy-Item (Join-Path $scriptDir "hooks\graph-router.sh") $scriptsDst -Force -ErrorAction SilentlyContinue
         Write-Host "✅ Файлы успешно скопированы в $resolvedTarget" -ForegroundColor Green
     }
