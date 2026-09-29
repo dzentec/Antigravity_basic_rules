@@ -53,12 +53,10 @@ switch ($Mode) {
     "Copy" {
         Write-Host "=== ПРЯМОЕ КОПИРОВАНИЕ ФАЙЛОВ ===" -ForegroundColor Yellow
         $rulesDst = Join-Path $resolvedTarget ".agents\rules"
-        $hooksDst = Join-Path $resolvedTarget ".agents\hooks"
         $scriptsDst = Join-Path $resolvedTarget "scripts"
         
-        New-Item -ItemType Directory -Force -Path $rulesDst, $hooksDst, $scriptsDst | Out-Null
+        New-Item -ItemType Directory -Force -Path $rulesDst, $scriptsDst | Out-Null
         Copy-Item (Join-Path $scriptDir "rules\*.md") $rulesDst -Force
-        Copy-Item (Join-Path $scriptDir "hooks\hooks.json") $hooksDst -Force -ErrorAction SilentlyContinue
         Copy-Item (Join-Path $scriptDir "hooks\graph-router.sh") $scriptsDst -Force -ErrorAction SilentlyContinue
         Write-Host "✅ Файлы успешно скопированы в $resolvedTarget" -ForegroundColor Green
     }

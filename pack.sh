@@ -41,17 +41,7 @@ pack() {
         echo "" >> "$BUNDLE"
     done
 
-    # 2. Хуки (.agents/hooks/hooks.json)
-    if [ -f "$HOOKS_DIR/hooks.json" ]; then
-        echo "## .agents/hooks/hooks.json" >> "$BUNDLE"
-        echo '````json' >> "$BUNDLE"
-        cat "$HOOKS_DIR/hooks.json" >> "$BUNDLE"
-        echo "" >> "$BUNDLE"
-        echo '````' >> "$BUNDLE"
-        echo "" >> "$BUNDLE"
-    fi
-
-    # 3. Скрипт роутинга (scripts/graph-router.sh)
+    # 2. Скрипт роутинга (scripts/graph-router.sh)
     if [ -f "$HOOKS_DIR/graph-router.sh" ]; then
         echo "## scripts/graph-router.sh" >> "$BUNDLE"
         echo '````bash' >> "$BUNDLE"

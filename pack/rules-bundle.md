@@ -654,26 +654,6 @@ description: "Стандарты коммитов (Conventional Commits): ато
 - Локальные настройки сред разработки (`.idea/`, `.vscode/settings.json`)
 ````
 
-## .agents/hooks/hooks.json
-````json
-{
-  "graph-router": {
-    "PreToolUse": [
-      {
-        "matcher": "grep|glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./scripts/graph-router.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
-  }
-}
-````
-
 ## scripts/graph-router.sh
 ````bash
 #!/usr/bin/env bash

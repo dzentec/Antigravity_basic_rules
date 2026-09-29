@@ -1,25 +1,3 @@
-diff --git b/.agents/hooks/hooks.json a/.agents/hooks/hooks.json
-deleted file mode 100644
-index a4e9964..0000000
---- b/.agents/hooks/hooks.json
-+++ /dev/null
-@@ -1,16 +0,0 @@
--{
--  "graph-router": {
--    "PreToolUse": [
--      {
--        "matcher": "grep|glob",
--        "hooks": [
--          {
--            "type": "command",
--            "command": "./scripts/graph-router.sh",
--            "timeout": 5
--          }
--        ]
--      }
--    ]
--  }
--}
 diff --git b/.agents/rules/00-research-protocol.md a/.agents/rules/00-research-protocol.md
 deleted file mode 100644
 index 074afbc..0000000
